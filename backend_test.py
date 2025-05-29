@@ -110,9 +110,8 @@ class StirlingBridgeAPITester:
         )
 
 def main():
-    # Get backend URL from frontend .env file
-    import os
-    backend_url = os.environ.get('REACT_APP_BACKEND_URL', 'http://localhost:8001')
+    # Use the public endpoint
+    backend_url = "https://583b92f5-4614-4be0-be43-b9dc9f1fbe04.preview.emergentagent.com"
     
     print(f"Testing Stirling Bridge LandDev API at: {backend_url}")
     
