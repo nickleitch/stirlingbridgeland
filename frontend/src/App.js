@@ -20,12 +20,12 @@ function App() {
     longitude: ''
   });
   const [projectName, setProjectName] = useState('');
-  const [architectEmail, setArchitectEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [showMap, setShowMap] = useState(false);
   const [mapLoading, setMapLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const mapRef = useRef();
 
   const handleCoordinateChange = (field, value) => {
