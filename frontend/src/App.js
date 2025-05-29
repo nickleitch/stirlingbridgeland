@@ -125,6 +125,12 @@ function App() {
       // Default to search coordinates
       const lat = parseFloat(coordinates.latitude);
       const lng = parseFloat(coordinates.longitude);
+      
+      // Check if coordinates are valid
+      if (isNaN(lat) || isNaN(lng)) {
+        return [[-26.2041, 28.0473], [-26.2041, 28.0473]]; // Default to Johannesburg
+      }
+      
       return [[lat - 0.01, lng - 0.01], [lat + 0.01, lng + 0.01]];
     }
 
