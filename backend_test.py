@@ -328,12 +328,12 @@ def main():
     
     # Test identify land with various coordinates
     test_coordinates = [
-        # Johannesburg (known working)
+        # Johannesburg (urban farms) - as specified in the test requirements
         (-26.2041, 28.0473, "Johannesburg Test"),
-        # Cape Town
+        # Free State (agricultural) - as specified in the test requirements
+        (-25.5000, 28.1000, "Free State Agricultural Test"),
+        # Cape Town (mixed development) - as specified in the test requirements
         (-33.9249, 18.4241, "Cape Town Test"),
-        # Durban
-        (-29.8587, 31.0218, "Durban Test"),
         # Pretoria
         (-25.7479, 28.2293, "Pretoria Test"),
         # Ocean coordinates (should return no boundaries)
