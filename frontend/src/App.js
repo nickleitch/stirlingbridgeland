@@ -567,11 +567,11 @@ function App() {
           
           <div className="bg-white p-6 rounded-xl shadow-lg">
             <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
-              <span className="text-purple-600 text-2xl">🏗️</span>
+              <span className="text-purple-600 text-2xl">📁</span>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Architect Ready</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Download Ready Files</h3>
             <p className="text-gray-600">
-              Send organized boundary files directly to architects for initial concept designs
+              Download organized boundary files, DWG-ready data, and project information for your development team
             </p>
           </div>
         </div>
