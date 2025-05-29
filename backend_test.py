@@ -443,9 +443,12 @@ class StirlingBridgeAPITester:
                 
         print(f"  - Parent Farm Boundaries Removed: {'❌ Failed' if parent_farm_found else '✅ Passed'}")
         
-        # Check for farm names and sizes
+        # Check for farm names, numbers, and sizes
         farm_names_found = False
+        farm_numbers_found = False
         farm_sizes_found = False
+        farm_names_examples = []
+        farm_sizes_examples = {}
         
         for test in coordinate_tests:
             result = self.test_results[test]
@@ -455,28 +458,72 @@ class StirlingBridgeAPITester:
             for boundary in result["response"].get("boundaries", []):
                 properties = boundary.get("properties", {})
                 
-                # Check for farm names
+                # Check for farm names (enhanced fields)
                 farm_name = properties.get('FARMNAME') or properties.get('NAME') or \
-                            properties.get('FARM_NAME') or properties.get('PropertyName')
+                            properties.get('FARM_NAME') or properties.get('PropertyName') or \
+                            properties.get('SS_NAME')
                             
                 if farm_name and farm_name != 'Unknown Farm':
                     farm_names_found = True
+                    if len(farm_names_examples) < 5 and farm_name not in farm_names_examples:
+                        farm_names_examples.append(farm_name)
                 
-                # Check for farm sizes
+                # Check for farm numbers (enhanced fields)
+                farm_number = properties.get('FARM_NO') or properties.get('FARM_NUMBER') or \
+                              properties.get('PARCEL_NO') or properties.get('PORTION') or \
+                              properties.get('DSG_NO')
+                              
+                if farm_number:
+                    farm_numbers_found = True
+                
+                # Check for farm sizes (enhanced fields)
                 farm_size = properties.get('AREA') or properties.get('HECTARES') or \
-                            properties.get('SIZE') or properties.get('EXTENT')
+                            properties.get('SIZE') or properties.get('EXTENT') or \
+                            properties.get('SHAPE_AREA') or properties.get('Shape.STArea()') or \
+                            properties.get('GEOM_AREA') or properties.get('Shape_Area')
                             
                 if farm_size:
                     farm_sizes_found = True
+                    if farm_name and len(farm_sizes_examples) < 3 and farm_name not in farm_sizes_examples:
+                        farm_sizes_examples[farm_name] = farm_size
                     
-                if farm_names_found and farm_sizes_found:
-                    break
-                    
-            if farm_names_found and farm_sizes_found:
+        print(f"  - Farm Names in Legend: {'✅ Passed' if farm_names_found else '❌ Failed'}")
+        if farm_names_found and farm_names_examples:
+            print(f"    Examples: {', '.join(farm_names_examples)}")
+            
+        print(f"  - Farm Numbers/Identifiers: {'✅ Passed' if farm_numbers_found else '❌ Failed'}")
+        
+        print(f"  - Farm Sizes in Legend: {'✅ Passed' if farm_sizes_found else '❌ Failed'}")
+        if farm_sizes_found and farm_sizes_examples:
+            for name, size in farm_sizes_examples.items():
+                print(f"    • {name}: {size}")
+        
+        # Check for size unit conversion
+        size_conversion_needed = False
+        size_conversion_applied = False
+        
+        for test in coordinate_tests:
+            result = self.test_results[test]
+            if not result["success"] or not result["response"].get("boundaries"):
+                continue
+                
+            for boundary in result["response"].get("boundaries", []):
+                properties = boundary.get("properties", {})
+                
+                # Check for large area values that would need conversion
+                for size_field in ['AREA', 'SHAPE_AREA', 'Shape.STArea()', 'GEOM_AREA', 'Shape_Area']:
+                    if properties.get(size_field) and float(properties.get(size_field)) > 100000:
+                        size_conversion_needed = True
+                        break
+                        
+            if size_conversion_needed:
                 break
                 
-        print(f"  - Farm Names in Legend: {'✅ Passed' if farm_names_found else '❌ Failed'}")
-        print(f"  - Farm Sizes in Legend: {'✅ Passed' if farm_sizes_found else '❌ Failed'}")
+        # We can't directly test the frontend conversion, but we can note if large values were found
+        if size_conversion_needed:
+            print(f"  - Size Unit Conversion: ⚠️ Large area values detected that would require conversion to hectares")
+        else:
+            print(f"  - Size Unit Conversion: ℹ️ No large area values detected that would require conversion")
         
         return {
             "tests_run": self.tests_run,
@@ -485,7 +532,11 @@ class StirlingBridgeAPITester:
             "enhanced_legend": {
                 "parent_farm_boundaries_removed": not parent_farm_found,
                 "farm_names_found": farm_names_found,
-                "farm_sizes_found": farm_sizes_found
+                "farm_numbers_found": farm_numbers_found,
+                "farm_sizes_found": farm_sizes_found,
+                "farm_names_examples": farm_names_examples,
+                "farm_sizes_examples": farm_sizes_examples,
+                "size_conversion_needed": size_conversion_needed
             }
         }
 
