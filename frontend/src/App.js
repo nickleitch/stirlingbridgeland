@@ -352,32 +352,68 @@ function App() {
           </MapContainer>
         </div>
 
-        {/* Map Legend */}
+        {/* Enhanced Map Legend with Farm Information */}
         <div className="mt-4 p-4 bg-gray-50 rounded-lg">
           <h4 className="font-semibold text-gray-800 mb-3">🛰️ Satellite Map Legend</h4>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {Object.entries({
-              "Parent Farm Boundaries": "#FF0000",
-              "Farm Portions": "#00FF00", 
-              "Erven": "#0000FF",
-              "Holdings": "#FFFF00",
-              "Public Places": "#FF00FF"
-            }).map(([type, color]) => (
-              <div key={type} className="flex items-center">
-                <div 
-                  className="w-4 h-4 rounded border-2 mr-2"
-                  style={{ backgroundColor: color, borderColor: color }}
-                ></div>
-                <span className="text-sm text-gray-700">{type}</span>
-              </div>
-            ))}
+          
+          {/* Farm Information Section */}
+          {(() => {
+            const farmInfo = getFarmInfo();
+            if (farmInfo.length > 0) {
+              return (
+                <div className="mb-4">
+                  <h5 className="font-medium text-gray-700 mb-2">🏡 Farm Properties Found:</h5>
+                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                    {farmInfo.map((farm, index) => (
+                      <div key={index} className="flex items-center justify-between text-sm">
+                        <div className="flex items-center">
+                          <div 
+                            className="w-3 h-3 rounded border mr-2"
+                            style={{ backgroundColor: farm.color, borderColor: farm.color }}
+                          ></div>
+                          <span className="font-medium text-gray-800">
+                            {farm.name} {farm.number !== 'N/A' ? `(${farm.number})` : ''}
+                          </span>
+                        </div>
+                        <div className="text-gray-600">
+                          {farm.size ? `${parseFloat(farm.size).toLocaleString()} ha` : 'Size unknown'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            }
+            return null;
+          })()}
+
+          {/* Boundary Types Section */}
+          <div>
+            <h5 className="font-medium text-gray-700 mb-2">📋 Boundary Types:</h5>
+            <div className="grid grid-cols-2 gap-2">
+              {Object.entries({
+                "Farm Portions": "#00FF00", 
+                "Erven": "#0000FF",
+                "Holdings": "#FFFF00",
+                "Public Places": "#FF00FF"
+              }).map(([type, color]) => (
+                <div key={type} className="flex items-center">
+                  <div 
+                    className="w-3 h-3 rounded border mr-2"
+                    style={{ backgroundColor: color, borderColor: color }}
+                  ></div>
+                  <span className="text-sm text-gray-700">{type}</span>
+                </div>
+              ))}
+            </div>
           </div>
+
           <div className="mt-3 flex items-center">
             <div className="w-4 h-4 mr-2">📍</div>
             <span className="text-sm text-gray-700">Search Location</span>
           </div>
           <div className="mt-2 text-xs text-gray-600">
-            🛰️ High-resolution satellite imagery with street overlays for enhanced land analysis
+            🛰️ High-resolution satellite imagery with property boundary overlays
           </div>
         </div>
       </div>
