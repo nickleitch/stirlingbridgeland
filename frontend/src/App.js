@@ -424,7 +424,7 @@ function App() {
                   Identifying Land...
                 </div>
               ) : (
-                '🗺️ Identify Land & Show Map'
+                '🛰️ Identify Land & Show Satellite Map'
               )}
             </button>
             
