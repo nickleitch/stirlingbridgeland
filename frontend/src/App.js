@@ -221,9 +221,19 @@ function App() {
             style={{ height: '100%', width: '100%' }}
             ref={mapRef}
           >
+            {/* Satellite Imagery Base Layer */}
             <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+              attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+              maxZoom={19}
+            />
+            
+            {/* Optional: Street overlay for reference */}
+            <TileLayer
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}"
+              attribution=''
+              opacity={0.3}
+              maxZoom={19}
             />
             
             {/* Search point marker */}
