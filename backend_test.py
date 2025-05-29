@@ -265,8 +265,6 @@ def main():
         (-30.0000, 0.0000, "Ocean Coordinates Test")
     ]
     
-    architect_email = "architect@example.com"
-    
     # Test valid coordinates
     for lat, lng, name in test_coordinates:
         success, response = tester.test_identify_land(lat, lng, name)
