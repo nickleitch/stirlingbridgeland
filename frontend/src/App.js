@@ -191,6 +191,52 @@ function App() {
     ];
   };
 
+  // Extract farm information from boundaries
+  const getFarmInfo = () => {
+    if (!result || !result.boundaries) return [];
+    
+    const farmInfo = [];
+    const farmMap = new Map();
+
+    result.boundaries.forEach(boundary => {
+      if (boundary.properties) {
+        const farmName = boundary.properties.FARMNAME || 
+                        boundary.properties.NAME || 
+                        boundary.properties.FARM_NAME || 
+                        boundary.properties.PropertyName ||
+                        'Unknown Farm';
+        
+        const farmNumber = boundary.properties.FARM_NO || 
+                          boundary.properties.FARM_NUMBER ||
+                          boundary.properties.PARCEL_NO ||
+                          'N/A';
+        
+        const size = boundary.properties.AREA || 
+                    boundary.properties.HECTARES || 
+                    boundary.properties.SIZE ||
+                    boundary.properties.EXTENT ||
+                    null;
+
+        const key = `${farmName}_${farmNumber}`;
+        
+        if (!farmMap.has(key)) {
+          farmMap.set(key, {
+            name: farmName,
+            number: farmNumber,
+            size: size,
+            layerType: boundary.layer_type,
+            color: getLayerColor(boundary.layer_type),
+            count: 1
+          });
+        } else {
+          farmMap.get(key).count++;
+        }
+      }
+    });
+
+    return Array.from(farmMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+  };
+
   const BoundaryCard = ({ boundary }) => (
     <div className="bg-gray-50 p-4 rounded-lg border-l-4" 
          style={{ borderLeftColor: getLayerColor(boundary.layer_type) }}>
