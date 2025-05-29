@@ -145,7 +145,6 @@ function App() {
   // Get color for different boundary types
   const getLayerColor = (layerType) => {
     const colorMap = {
-      "Parent Farm Boundaries": "#FF0000",
       "Farm Portions": "#00FF00", 
       "Erven": "#0000FF",
       "Holdings": "#FFFF00",
