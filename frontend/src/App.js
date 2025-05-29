@@ -240,7 +240,7 @@ function App() {
           farmMap.set(key, {
             name: farmName,
             number: farmNumber,
-            size: size,
+            size: sizeInHa,
             layerType: boundary.layer_type,
             color: getLayerColor(boundary.layer_type),
             count: 1
