@@ -20,6 +20,7 @@ function App() {
     longitude: ''
   });
   const [projectName, setProjectName] = useState('');
+  const [architectEmail, setArchitectEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
