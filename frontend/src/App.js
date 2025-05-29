@@ -286,7 +286,7 @@ function App() {
 
         {/* Map Legend */}
         <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-          <h4 className="font-semibold text-gray-800 mb-3">🗺️ Map Legend</h4>
+          <h4 className="font-semibold text-gray-800 mb-3">🛰️ Satellite Map Legend</h4>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {Object.entries({
               "Parent Farm Boundaries": "#FF0000",
@@ -307,6 +307,9 @@ function App() {
           <div className="mt-3 flex items-center">
             <div className="w-4 h-4 mr-2">📍</div>
             <span className="text-sm text-gray-700">Search Location</span>
+          </div>
+          <div className="mt-2 text-xs text-gray-600">
+            🛰️ High-resolution satellite imagery with street overlays for enhanced land analysis
           </div>
         </div>
       </div>
