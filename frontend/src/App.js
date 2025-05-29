@@ -204,11 +204,14 @@ function App() {
                         boundary.properties.NAME || 
                         boundary.properties.FARM_NAME || 
                         boundary.properties.PropertyName ||
+                        boundary.properties.SS_NAME ||
                         'Unknown Farm';
         
         const farmNumber = boundary.properties.FARM_NO || 
                           boundary.properties.FARM_NUMBER ||
                           boundary.properties.PARCEL_NO ||
+                          boundary.properties.PORTION ||
+                          boundary.properties.DSG_NO ||
                           'N/A';
         
         const size = boundary.properties.AREA || 
@@ -216,6 +219,8 @@ function App() {
                     boundary.properties.SIZE ||
                     boundary.properties.EXTENT ||
                     boundary.properties.SHAPE_AREA ||
+                    boundary.properties['Shape.STArea()'] ||
+                    boundary.properties.GEOM_AREA ||
                     boundary.properties.Shape_Area ||
                     boundary.properties.area ||
                     boundary.properties.AREA_HA ||
