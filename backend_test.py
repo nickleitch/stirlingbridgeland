@@ -390,10 +390,70 @@ class StirlingBridgeAPITester:
                 status = "✅ Passed" if result["success"] else "❌ Failed"
                 print(f"  - {test_type}: {status}")
         
+        # Summarize enhanced legend functionality tests
+        print("\nEnhanced Legend Functionality Tests:")
+        
+        # Check for absence of Parent Farm Boundaries
+        parent_farm_found = False
+        for test in coordinate_tests:
+            result = self.test_results[test]
+            if not result["success"]:
+                continue
+                
+            for boundary in result["response"].get("boundaries", []):
+                if boundary.get("layer_type") == "Parent Farm Boundaries":
+                    parent_farm_found = True
+                    break
+                    
+            if parent_farm_found:
+                break
+                
+        print(f"  - Parent Farm Boundaries Removed: {'❌ Failed' if parent_farm_found else '✅ Passed'}")
+        
+        # Check for farm names and sizes
+        farm_names_found = False
+        farm_sizes_found = False
+        
+        for test in coordinate_tests:
+            result = self.test_results[test]
+            if not result["success"] or not result["response"].get("boundaries"):
+                continue
+                
+            for boundary in result["response"].get("boundaries", []):
+                properties = boundary.get("properties", {})
+                
+                # Check for farm names
+                farm_name = properties.get('FARMNAME') or properties.get('NAME') or \
+                            properties.get('FARM_NAME') or properties.get('PropertyName')
+                            
+                if farm_name and farm_name != 'Unknown Farm':
+                    farm_names_found = True
+                
+                # Check for farm sizes
+                farm_size = properties.get('AREA') or properties.get('HECTARES') or \
+                            properties.get('SIZE') or properties.get('EXTENT')
+                            
+                if farm_size:
+                    farm_sizes_found = True
+                    
+                if farm_names_found and farm_sizes_found:
+                    break
+                    
+            if farm_names_found and farm_sizes_found:
+                break
+                
+        print(f"  - Farm Names in Legend: {'✅ Passed' if farm_names_found else '❌ Failed'}")
+        print(f"  - Farm Sizes in Legend: {'✅ Passed' if farm_sizes_found else '❌ Failed'}")
+        
         return {
             "tests_run": self.tests_run,
             "tests_passed": self.tests_passed,
-            "success_rate": (self.tests_passed / self.tests_run) * 100
+            "success_rate": (self.tests_passed / self.tests_run) * 100,
+            "enhanced_legend": {
+                "parent_farm_boundaries_removed": not parent_farm_found,
+                "farm_names_found": farm_names_found,
+                "farm_sizes_found": farm_sizes_found
+            }
         }
 
 def main():
