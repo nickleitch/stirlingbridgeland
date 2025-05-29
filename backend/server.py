@@ -209,6 +209,14 @@ async def identify_land(coordinate_input: CoordinateInput):
             created_at=datetime.now().isoformat()
         )
         
+        # Store project data for download
+        projects_storage[project_id] = {
+            "response": response,
+            "dwg_data": dwg_data,
+            "project_name": coordinate_input.project_name,
+            "raw_boundaries": boundaries
+        }
+        
         return response
         
     except Exception as e:
