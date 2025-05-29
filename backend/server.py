@@ -47,6 +47,9 @@ class LandDataResponse(BaseModel):
 # CSG API Configuration
 CSG_BASE_URL = "https://dffeportal.environment.gov.za/hosting/rest/services/CSG_Cadaster/CSG_Cadastral_Data/MapServer"
 
+# In-memory storage for project data (in production, use a proper database)
+projects_storage = {}
+
 # Available boundary layers to query
 BOUNDARY_LAYERS = {
     "parent_farms": {"layer_id": 0, "name": "Parent Farm Boundaries"},
