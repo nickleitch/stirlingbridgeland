@@ -526,14 +526,18 @@ function App() {
 
             {result.files_generated && result.files_generated.length > 0 && (
               <div className="mt-6 pt-6 border-t border-gray-200">
-                <h4 className="text-lg font-semibold text-gray-800 mb-3">Files Generated for Architect</h4>
-                <div className="flex flex-wrap gap-2">
+                <h4 className="text-lg font-semibold text-gray-800 mb-3">Files Ready for Download</h4>
+                <div className="flex flex-wrap gap-2 mb-4">
                   {result.files_generated.map((file, index) => (
                     <span key={index} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
                       {file}
                     </span>
                   ))}
                 </div>
+                <p className="text-sm text-gray-600">
+                  Click "Download Land Data Files" to get a ZIP file containing all boundary data, 
+                  DWG-ready files, and project information for your development team.
+                </p>
               </div>
             )}
           </div>
