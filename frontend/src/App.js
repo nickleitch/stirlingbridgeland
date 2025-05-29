@@ -67,9 +67,20 @@ function App() {
       const data = await response.json();
       setResult(data);
       
-      // Show map if we have boundary data
+      // Show map if we have boundary data or valid coordinates
       if (data.boundaries && data.boundaries.length > 0) {
-        setShowMap(true);
+        setMapLoading(true);
+        setTimeout(() => {
+          setShowMap(true);
+          setMapLoading(false);
+        }, 500); // Small delay to ensure smooth transition
+      } else if (data.coordinates) {
+        // Show map even without boundaries if coordinates are valid
+        setMapLoading(true);
+        setTimeout(() => {
+          setShowMap(true);
+          setMapLoading(false);
+        }, 500);
       }
     } catch (err) {
       setError(`Failed to identify land: ${err.message}`);
