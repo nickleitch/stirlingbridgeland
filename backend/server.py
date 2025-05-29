@@ -52,7 +52,6 @@ projects_storage = {}
 
 # Available boundary layers to query
 BOUNDARY_LAYERS = {
-    "parent_farms": {"layer_id": 0, "name": "Parent Farm Boundaries"},
     "farm_portions": {"layer_id": 1, "name": "Farm Portions"},
     "erven": {"layer_id": 2, "name": "Erven"},
     "holdings": {"layer_id": 3, "name": "Holdings"},
