@@ -94,9 +94,94 @@ class StirlingBridgeAPITester:
             
             # Validate response structure
             self._validate_response_structure(response)
+            
+            # Check for absence of Parent Farm Boundaries
+            self._check_parent_farm_boundaries(response)
+            
+            # Check for farm names and sizes
+            self._check_farm_info(response)
         
         self.test_results[test_name] = {"success": success, "response": response}
         return success, response
+        
+    def _check_parent_farm_boundaries(self, response):
+        """Check that Parent Farm Boundaries are not present in the response"""
+        print("\n  🔍 Checking for absence of Parent Farm Boundaries...")
+        
+        if not response.get('boundaries'):
+            print("  ⚠️ No boundaries found to check")
+            return
+            
+        parent_farm_found = False
+        boundary_types = set()
+        
+        for boundary in response.get('boundaries', []):
+            boundary_type = boundary.get('layer_type')
+            boundary_types.add(boundary_type)
+            
+            if boundary_type == "Parent Farm Boundaries":
+                parent_farm_found = True
+                print(f"  ❌ Found Parent Farm Boundary: {boundary.get('layer_name')}")
+        
+        if parent_farm_found:
+            print("  ❌ Parent Farm Boundaries are still present in the response")
+        else:
+            print("  ✅ No Parent Farm Boundaries found in the response")
+            
+        print(f"  📊 Boundary types found: {', '.join(boundary_types)}")
+        
+        # Check that only 4 boundary types are present (not 5)
+        expected_types = {"Farm Portions", "Erven", "Holdings", "Public Places"}
+        unexpected_types = boundary_types - expected_types
+        missing_types = expected_types - boundary_types
+        
+        if unexpected_types:
+            print(f"  ⚠️ Unexpected boundary types found: {', '.join(unexpected_types)}")
+        
+        if missing_types and boundary_types:  # Only report if we found some boundaries
+            print(f"  ⚠️ Expected boundary types missing: {', '.join(missing_types)}")
+            
+    def _check_farm_info(self, response):
+        """Check for farm names and sizes in the response"""
+        print("\n  🔍 Checking for farm names and sizes...")
+        
+        if not response.get('boundaries'):
+            print("  ⚠️ No boundaries found to check")
+            return
+            
+        farm_names_found = False
+        farm_sizes_found = False
+        farm_names = set()
+        
+        for boundary in response.get('boundaries', []):
+            properties = boundary.get('properties', {})
+            
+            # Check for farm names in various property fields
+            farm_name = properties.get('FARMNAME') or properties.get('NAME') or \
+                        properties.get('FARM_NAME') or properties.get('PropertyName')
+                        
+            if farm_name and farm_name != 'Unknown Farm':
+                farm_names_found = True
+                farm_names.add(farm_name)
+            
+            # Check for farm sizes in various property fields
+            farm_size = properties.get('AREA') or properties.get('HECTARES') or \
+                        properties.get('SIZE') or properties.get('EXTENT')
+                        
+            if farm_size:
+                farm_sizes_found = True
+        
+        if farm_names_found:
+            print(f"  ✅ Farm names found: {', '.join(list(farm_names)[:5])}")
+            if len(farm_names) > 5:
+                print(f"     ...and {len(farm_names) - 5} more")
+        else:
+            print("  ❌ No farm names found in the response")
+            
+        if farm_sizes_found:
+            print("  ✅ Farm sizes found in the response")
+        else:
+            print("  ❌ No farm sizes found in the response")
 
     def _validate_response_structure(self, response):
         """Validate the structure of the identify-land response"""
