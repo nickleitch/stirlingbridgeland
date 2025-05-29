@@ -151,25 +151,40 @@ class StirlingBridgeAPITester:
             
         farm_names_found = False
         farm_sizes_found = False
+        farm_numbers_found = False
         farm_names = set()
+        farm_sizes = {}
         
         for boundary in response.get('boundaries', []):
             properties = boundary.get('properties', {})
             
-            # Check for farm names in various property fields
+            # Check for farm names in various property fields (enhanced fields)
             farm_name = properties.get('FARMNAME') or properties.get('NAME') or \
-                        properties.get('FARM_NAME') or properties.get('PropertyName')
+                        properties.get('FARM_NAME') or properties.get('PropertyName') or \
+                        properties.get('SS_NAME')
                         
             if farm_name and farm_name != 'Unknown Farm':
                 farm_names_found = True
                 farm_names.add(farm_name)
             
-            # Check for farm sizes in various property fields
+            # Check for farm numbers in various property fields (enhanced fields)
+            farm_number = properties.get('FARM_NO') or properties.get('FARM_NUMBER') or \
+                          properties.get('PARCEL_NO') or properties.get('PORTION') or \
+                          properties.get('DSG_NO')
+                          
+            if farm_number:
+                farm_numbers_found = True
+            
+            # Check for farm sizes in various property fields (enhanced fields)
             farm_size = properties.get('AREA') or properties.get('HECTARES') or \
-                        properties.get('SIZE') or properties.get('EXTENT')
+                        properties.get('SIZE') or properties.get('EXTENT') or \
+                        properties.get('SHAPE_AREA') or properties.get('Shape.STArea()') or \
+                        properties.get('GEOM_AREA') or properties.get('Shape_Area')
                         
             if farm_size:
                 farm_sizes_found = True
+                if farm_name:
+                    farm_sizes[farm_name] = farm_size
         
         if farm_names_found:
             print(f"  ✅ Farm names found: {', '.join(list(farm_names)[:5])}")
@@ -178,10 +193,28 @@ class StirlingBridgeAPITester:
         else:
             print("  ❌ No farm names found in the response")
             
+        if farm_numbers_found:
+            print("  ✅ Farm numbers/identifiers found in the response")
+        else:
+            print("  ❌ No farm numbers/identifiers found in the response")
+            
         if farm_sizes_found:
             print("  ✅ Farm sizes found in the response")
+            for name, size in list(farm_sizes.items())[:3]:
+                print(f"     • {name}: {size}")
+            if len(farm_sizes) > 3:
+                print(f"     ...and {len(farm_sizes) - 3} more")
         else:
             print("  ❌ No farm sizes found in the response")
+            
+        # Return results for summary
+        return {
+            "farm_names_found": farm_names_found,
+            "farm_numbers_found": farm_numbers_found,
+            "farm_sizes_found": farm_sizes_found,
+            "farm_names": list(farm_names)[:10],
+            "farm_sizes": {k: v for k, v in list(farm_sizes.items())[:5]}
+        }
 
     def _validate_response_structure(self, response):
         """Validate the structure of the identify-land response"""
