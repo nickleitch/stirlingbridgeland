@@ -185,6 +185,21 @@ function App() {
     const searchLat = parseFloat(coordinates.latitude);
     const searchLng = parseFloat(coordinates.longitude);
 
+    // Check if coordinates are valid before rendering map
+    if (isNaN(searchLat) || isNaN(searchLng)) {
+      return (
+        <div className="bg-white rounded-xl shadow-xl p-6 mb-8">
+          <h3 className="text-2xl font-bold text-gray-900 mb-4">📍 Map Visualization</h3>
+          <div className="h-96 w-full rounded-lg border-2 border-gray-200 flex items-center justify-center bg-gray-50">
+            <div className="text-center">
+              <div className="text-gray-400 text-6xl mb-4">🗺️</div>
+              <p className="text-gray-600">Invalid coordinates provided</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="bg-white rounded-xl shadow-xl p-6 mb-8">
         <h3 className="text-2xl font-bold text-gray-900 mb-4">📍 Boundary Map Visualization</h3>
