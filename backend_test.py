@@ -272,10 +272,10 @@ def main():
     for lat, lng, name in test_coordinates:
         success, response = tester.test_identify_land(lat, lng, name, architect_email)
         
-        # If we have a project ID, test the project retrieval and send to architect
+        # If we have a project ID, test the project retrieval and download files
         if success and tester.project_id:
             tester.test_get_project(tester.project_id)
-            tester.test_send_to_architect(tester.project_id, architect_email)
+            tester.test_download_files(tester.project_id)
     
     # Test invalid coordinates
     tester.test_invalid_coordinates()
