@@ -69,7 +69,7 @@ class StirlingBridgeAPITester:
         self.test_results["boundary_types"] = {"success": success, "response": response}
         return success, response
 
-    def test_identify_land(self, latitude, longitude, project_name="Test Project", architect_email="test@example.com"):
+    def test_identify_land(self, latitude, longitude, project_name="Test Project"):
         """Test the identify land endpoint"""
         test_name = f"identify_land_{latitude}_{longitude}"
         
@@ -81,8 +81,7 @@ class StirlingBridgeAPITester:
             data={
                 "latitude": latitude,
                 "longitude": longitude,
-                "project_name": project_name,
-                "architect_email": architect_email
+                "project_name": project_name
             }
         )
         
