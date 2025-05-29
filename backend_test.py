@@ -155,6 +155,81 @@ class StirlingBridgeAPITester:
         self.test_results[f"send_to_architect_{project_id}"] = {"success": success, "response": response}
         return success, response
         
+    def test_download_files(self, project_id):
+        """Test downloading files"""
+        print(f"\n🔍 Testing Download Files for Project {project_id}...")
+        
+        try:
+            url = f"{self.base_url}/api/download-files/{project_id}"
+            headers = {'Content-Type': 'application/json'}
+            
+            self.tests_run += 1
+            
+            response = requests.get(url, headers=headers, stream=True)
+            
+            success = response.status_code == 200
+            if success:
+                self.tests_passed += 1
+                print(f"✅ Passed - Status: {response.status_code}")
+                
+                # Check content type
+                content_type = response.headers.get('Content-Type')
+                print(f"  - Content Type: {content_type}")
+                
+                # Check content disposition
+                content_disposition = response.headers.get('Content-Disposition')
+                print(f"  - Content Disposition: {content_disposition}")
+                
+                # Get filename from content disposition
+                filename = None
+                if content_disposition:
+                    filename_match = content_disposition.split('filename=')
+                    if len(filename_match) > 1:
+                        filename = filename_match[1].strip('"')
+                        print(f"  - Filename: {filename}")
+                
+                # Save the file for inspection
+                if filename:
+                    test_download_path = f"/tmp/{filename}"
+                    with open(test_download_path, 'wb') as f:
+                        for chunk in response.iter_content(chunk_size=8192):
+                            f.write(chunk)
+                    
+                    print(f"  - Downloaded file to: {test_download_path}")
+                    
+                    # Check if it's a valid ZIP file
+                    try:
+                        with zipfile.ZipFile(test_download_path, 'r') as zip_ref:
+                            file_list = zip_ref.namelist()
+                            print(f"  - ZIP contains {len(file_list)} files:")
+                            for file in file_list:
+                                print(f"    • {file}")
+                    except Exception as e:
+                        print(f"  ⚠️ Warning: Could not read ZIP file: {str(e)}")
+                
+                self.test_results[f"download_files_{project_id}"] = {
+                    "success": success, 
+                    "content_type": content_type,
+                    "filename": filename,
+                    "file_saved": test_download_path if filename else None
+                }
+                
+                return success, {"filename": filename}
+            else:
+                print(f"❌ Failed - Expected 200, got {response.status_code}")
+                try:
+                    print(f"Response: {response.text}")
+                except:
+                    pass
+                
+                self.test_results[f"download_files_{project_id}"] = {"success": False}
+                return False, {}
+                
+        except Exception as e:
+            print(f"❌ Failed - Error: {str(e)}")
+            self.test_results[f"download_files_{project_id}"] = {"success": False, "error": str(e)}
+            return False, {}
+        
     def test_invalid_coordinates(self):
         """Test various invalid coordinate inputs"""
         print("\n🔍 Testing Invalid Coordinate Handling...")
