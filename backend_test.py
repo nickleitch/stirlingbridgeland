@@ -269,7 +269,7 @@ def main():
     
     # Test valid coordinates
     for lat, lng, name in test_coordinates:
-        success, response = tester.test_identify_land(lat, lng, name, architect_email)
+        success, response = tester.test_identify_land(lat, lng, name)
         
         # If we have a project ID, test the project retrieval and download files
         if success and tester.project_id:
