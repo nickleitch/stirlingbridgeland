@@ -56,8 +56,7 @@ function App() {
         body: JSON.stringify({
           latitude: parseFloat(coordinates.latitude),
           longitude: parseFloat(coordinates.longitude),
-          project_name: projectName || 'Land Development Project',
-          architect_email: architectEmail
+          project_name: projectName || 'Land Development Project'
         })
       });
 
@@ -90,24 +89,47 @@ function App() {
     }
   };
 
-  const handleSendToArchitect = async () => {
-    if (!result || !architectEmail) {
-      setError('Please provide architect email and ensure land identification is completed');
+  const handleDownloadFiles = async () => {
+    if (!result) {
+      setError('Please complete land identification first');
       return;
     }
 
+    setDownloading(true);
     try {
-      const response = await fetch(`${BACKEND_URL}/api/send-to-architect?project_id=${result.project_id}&architect_email=${architectEmail}`, {
-        method: 'POST'
+      const response = await fetch(`${BACKEND_URL}/api/download-files/${result.project_id}`, {
+        method: 'GET'
       });
 
-      if (response.ok) {
-        alert('Files sent to architect successfully!');
-      } else {
-        throw new Error('Failed to send files');
+      if (!response.ok) {
+        throw new Error('Failed to generate files');
       }
+
+      // Get the filename from the response headers or use a default
+      const contentDisposition = response.headers.get('content-disposition');
+      let filename = `land_data_${result.project_id}.zip`;
+      
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
     } catch (err) {
-      setError(`Failed to send files: ${err.message}`);
+      setError(`Failed to download files: ${err.message}`);
+    } finally {
+      setDownloading(false);
     }
   };
 
