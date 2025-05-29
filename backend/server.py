@@ -28,7 +28,6 @@ class CoordinateInput(BaseModel):
     latitude: float
     longitude: float
     project_name: Optional[str] = "Land Development Project"
-    architect_email: Optional[str] = None
 
 class BoundaryLayer(BaseModel):
     layer_name: str
