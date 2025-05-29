@@ -1,7 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { MapContainer, TileLayer, Polygon, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import './App.css';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+
+// Fix for default markers in react-leaflet
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 function App() {
   const [coordinates, setCoordinates] = useState({
@@ -13,6 +24,8 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
+  const [showMap, setShowMap] = useState(false);
+  const mapRef = useRef();
 
   const handleCoordinateChange = (field, value) => {
     setCoordinates(prev => ({
@@ -30,6 +43,7 @@ function App() {
 
     setLoading(true);
     setError('');
+    setShowMap(false);
 
     try {
       const response = await fetch(`${BACKEND_URL}/api/identify-land`, {
@@ -51,6 +65,11 @@ function App() {
 
       const data = await response.json();
       setResult(data);
+      
+      // Show map if we have boundary data
+      if (data.boundaries && data.boundaries.length > 0) {
+        setShowMap(true);
+      }
     } catch (err) {
       setError(`Failed to identify land: ${err.message}`);
     } finally {
@@ -79,6 +98,59 @@ function App() {
     }
   };
 
+  // Convert CSG geometry to Leaflet polygon coordinates
+  const convertGeometryToLeaflet = (geometry) => {
+    if (!geometry || !geometry.rings) return [];
+    
+    return geometry.rings.map(ring => 
+      ring.map(coord => [coord[1], coord[0]]) // Leaflet expects [lat, lng]
+    );
+  };
+
+  // Get color for different boundary types
+  const getLayerColor = (layerType) => {
+    const colorMap = {
+      "Parent Farm Boundaries": "#FF0000",
+      "Farm Portions": "#00FF00", 
+      "Erven": "#0000FF",
+      "Holdings": "#FFFF00",
+      "Public Places": "#FF00FF"
+    };
+    return colorMap[layerType] || "#000000";
+  };
+
+  // Get map bounds to fit all boundaries
+  const getMapBounds = () => {
+    if (!result || !result.boundaries || result.boundaries.length === 0) {
+      // Default to search coordinates
+      const lat = parseFloat(coordinates.latitude);
+      const lng = parseFloat(coordinates.longitude);
+      return [[lat - 0.01, lng - 0.01], [lat + 0.01, lng + 0.01]];
+    }
+
+    let minLat = Infinity, maxLat = -Infinity;
+    let minLng = Infinity, maxLng = -Infinity;
+
+    result.boundaries.forEach(boundary => {
+      if (boundary.geometry && boundary.geometry.rings) {
+        boundary.geometry.rings[0].forEach(coord => {
+          const [lng, lat] = coord;
+          minLat = Math.min(minLat, lat);
+          maxLat = Math.max(maxLat, lat);
+          minLng = Math.min(minLng, lng);
+          maxLng = Math.max(maxLng, lng);
+        });
+      }
+    });
+
+    // Add some padding
+    const padding = 0.001;
+    return [
+      [minLat - padding, minLng - padding],
+      [maxLat + padding, maxLng + padding]
+    ];
+  };
+
   const BoundaryCard = ({ boundary }) => (
     <div className="bg-gray-50 p-4 rounded-lg border-l-4" 
          style={{ borderLeftColor: getLayerColor(boundary.layer_type) }}>
@@ -102,15 +174,100 @@ function App() {
     </div>
   );
 
-  const getLayerColor = (layerType) => {
-    const colorMap = {
-      "Parent Farm Boundaries": "#FF0000",
-      "Farm Portions": "#00FF00",
-      "Erven": "#0000FF",
-      "Holdings": "#FFFF00",
-      "Public Places": "#FF00FF"
-    };
-    return colorMap[layerType] || "#000000";
+  const MapComponent = () => {
+    const bounds = getMapBounds();
+    const searchLat = parseFloat(coordinates.latitude);
+    const searchLng = parseFloat(coordinates.longitude);
+
+    return (
+      <div className="bg-white rounded-xl shadow-xl p-6 mb-8">
+        <h3 className="text-2xl font-bold text-gray-900 mb-4">📍 Boundary Map Visualization</h3>
+        <div className="h-96 w-full rounded-lg overflow-hidden border-2 border-gray-200">
+          <MapContainer
+            bounds={bounds}
+            style={{ height: '100%', width: '100%' }}
+            ref={mapRef}
+          >
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            />
+            
+            {/* Search point marker */}
+            <Marker position={[searchLat, searchLng]}>
+              <Popup>
+                <div className="text-center">
+                  <strong>Search Location</strong><br/>
+                  {searchLat.toFixed(6)}, {searchLng.toFixed(6)}
+                </div>
+              </Popup>
+            </Marker>
+
+            {/* Boundary polygons */}
+            {result && result.boundaries && result.boundaries.map((boundary, index) => {
+              const polygonCoords = convertGeometryToLeaflet(boundary.geometry);
+              const color = getLayerColor(boundary.layer_type);
+              
+              if (polygonCoords.length === 0) return null;
+
+              return (
+                <Polygon
+                  key={index}
+                  positions={polygonCoords}
+                  pathOptions={{
+                    color: color,
+                    weight: 2,
+                    opacity: 0.8,
+                    fillColor: color,
+                    fillOpacity: 0.2
+                  }}
+                >
+                  <Popup>
+                    <div>
+                      <strong>{boundary.layer_name}</strong><br/>
+                      <em>Type: {boundary.layer_type}</em><br/>
+                      <small>Source: {boundary.source_api}</small>
+                      {boundary.properties && boundary.properties.PARCEL_NO && (
+                        <><br/><small>Parcel: {boundary.properties.PARCEL_NO}</small></>
+                      )}
+                      {boundary.properties && boundary.properties.FARMNAME && (
+                        <><br/><small>Farm: {boundary.properties.FARMNAME}</small></>
+                      )}
+                    </div>
+                  </Popup>
+                </Polygon>
+              );
+            })}
+          </MapContainer>
+        </div>
+
+        {/* Map Legend */}
+        <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+          <h4 className="font-semibold text-gray-800 mb-3">🗺️ Map Legend</h4>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {Object.entries({
+              "Parent Farm Boundaries": "#FF0000",
+              "Farm Portions": "#00FF00", 
+              "Erven": "#0000FF",
+              "Holdings": "#FFFF00",
+              "Public Places": "#FF00FF"
+            }).map(([type, color]) => (
+              <div key={type} className="flex items-center">
+                <div 
+                  className="w-4 h-4 rounded border-2 mr-2"
+                  style={{ backgroundColor: color, borderColor: color }}
+                ></div>
+                <span className="text-sm text-gray-700">{type}</span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 flex items-center">
+            <div className="w-4 h-4 mr-2">📍</div>
+            <span className="text-sm text-gray-700">Search Location</span>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -221,7 +378,7 @@ function App() {
                   Identifying Land...
                 </div>
               ) : (
-                'Identify Land & Retrieve Boundaries'
+                '🗺️ Identify Land & Show Map'
               )}
             </button>
             
@@ -230,7 +387,7 @@ function App() {
                 onClick={handleSendToArchitect}
                 className="bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-blue-700 transition-all"
               >
-                Send to Architect
+                📧 Send to Architect
               </button>
             )}
           </div>
@@ -241,6 +398,11 @@ function App() {
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-8">
             {error}
           </div>
+        )}
+
+        {/* Map Visualization */}
+        {showMap && result && result.boundaries && result.boundaries.length > 0 && (
+          <MapComponent />
         )}
 
         {/* Results */}
@@ -306,9 +468,9 @@ function App() {
             <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
               <span className="text-green-600 text-2xl">🗺️</span>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Cadastral Data</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Interactive Map</h3>
             <p className="text-gray-600">
-              Retrieve official boundary information from the South African Chief Surveyor General
+              Visualize property boundaries on an interactive map with color-coded layers and detailed popups
             </p>
           </div>
           
