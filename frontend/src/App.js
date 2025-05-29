@@ -433,8 +433,21 @@ function App() {
           </div>
         )}
 
+        {/* Map Loading State */}
+        {mapLoading && (
+          <div className="bg-white rounded-xl shadow-xl p-6 mb-8">
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">📍 Loading Map...</h3>
+            <div className="h-96 w-full rounded-lg border-2 border-gray-200 flex items-center justify-center bg-gray-50">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+                <p className="text-gray-600">Preparing map visualization...</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Map Visualization */}
-        {showMap && result && result.boundaries && result.boundaries.length > 0 && (
+        {showMap && result && !mapLoading && (
           <MapComponent />
         )}
 
