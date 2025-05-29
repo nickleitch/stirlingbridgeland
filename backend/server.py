@@ -123,7 +123,6 @@ def convert_to_dwg_layers(boundaries: List[BoundaryLayer]) -> Dict[str, Any]:
 def get_layer_color(layer_type: str) -> str:
     """Assign colors to different layer types"""
     color_map = {
-        "Parent Farm Boundaries": "#FF0000",  # Red
         "Farm Portions": "#00FF00",           # Green
         "Erven": "#0000FF",                   # Blue
         "Holdings": "#FFFF00",                # Yellow
@@ -134,7 +133,6 @@ def get_layer_color(layer_type: str) -> str:
 def get_layer_weight(layer_type: str) -> float:
     """Assign line weights to different layer types"""
     weight_map = {
-        "Parent Farm Boundaries": 0.8,
         "Farm Portions": 0.6,
         "Erven": 0.4,
         "Holdings": 0.5,
