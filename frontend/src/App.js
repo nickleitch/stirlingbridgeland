@@ -525,11 +525,11 @@ function App() {
         <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="bg-white p-6 rounded-xl shadow-lg">
             <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
-              <span className="text-green-600 text-2xl">🗺️</span>
+              <span className="text-green-600 text-2xl">🛰️</span>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Interactive Map</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Satellite Map View</h3>
             <p className="text-gray-600">
-              Visualize property boundaries on an interactive map with color-coded layers and detailed popups
+              High-resolution satellite imagery shows actual terrain, vegetation, buildings, and land features for comprehensive analysis
             </p>
           </div>
           
