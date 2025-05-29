@@ -375,7 +375,7 @@ function App() {
         <div className="bg-white rounded-xl shadow-xl p-8 mb-8">
           <h3 className="text-2xl font-bold text-gray-900 mb-6">Project Details</h3>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div className="grid grid-cols-1 gap-6 mb-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Project Name
@@ -385,19 +385,6 @@ function App() {
                 value={projectName}
                 onChange={(e) => setProjectName(e.target.value)}
                 placeholder="Enter project name"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Architect Email
-              </label>
-              <input
-                type="email"
-                value={architectEmail}
-                onChange={(e) => setArchitectEmail(e.target.value)}
-                placeholder="architect@email.com"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
