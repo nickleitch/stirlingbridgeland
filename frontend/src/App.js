@@ -215,7 +215,24 @@ function App() {
                     boundary.properties.HECTARES || 
                     boundary.properties.SIZE ||
                     boundary.properties.EXTENT ||
+                    boundary.properties.SHAPE_AREA ||
+                    boundary.properties.Shape_Area ||
+                    boundary.properties.area ||
+                    boundary.properties.AREA_HA ||
+                    boundary.properties.ACREAGE ||
                     null;
+
+        // Convert size to hectares if needed
+        let sizeInHa = null;
+        if (size && !isNaN(parseFloat(size))) {
+          const numericSize = parseFloat(size);
+          // If size is very large, it might be in square meters, convert to hectares
+          if (numericSize > 100000) {
+            sizeInHa = (numericSize / 10000).toFixed(2); // Convert m² to ha
+          } else {
+            sizeInHa = numericSize.toFixed(2); // Assume already in hectares
+          }
+        }
 
         const key = `${farmName}_${farmNumber}`;
         
