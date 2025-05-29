@@ -437,6 +437,23 @@ function App() {
                 '🛰️ Identify Land & Show Satellite Map'
               )}
             </button>
+            
+            {result && result.boundaries && result.boundaries.length > 0 && (
+              <button
+                onClick={handleDownloadFiles}
+                disabled={downloading}
+                className="bg-blue-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-blue-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
+              >
+                {downloading ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2"></div>
+                    Preparing Files...
+                  </div>
+                ) : (
+                  '📁 Download Land Data Files'
+                )}
+              </button>
+            )}
           </div>
         </div>
 
