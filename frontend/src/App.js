@@ -25,6 +25,7 @@ function App() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [showMap, setShowMap] = useState(false);
+  const [mapLoading, setMapLoading] = useState(false);
   const mapRef = useRef();
 
   const handleCoordinateChange = (field, value) => {
