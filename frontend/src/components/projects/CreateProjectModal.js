@@ -158,7 +158,7 @@ const CreateProjectModal = memo(({ isOpen, onClose, onProjectCreated }) => {
           <button
             onClick={handleClose}
             className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all"
-            disabled={loading}
+            disabled={loading || isSubmitting}
           >
             Cancel
           </button>
