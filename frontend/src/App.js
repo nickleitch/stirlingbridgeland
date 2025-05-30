@@ -415,22 +415,49 @@ function App() {
 
           {/* Boundary Types Section */}
           <div>
-            <h5 className="font-medium text-gray-700 mb-2">📋 Boundary Types:</h5>
-            <div className="grid grid-cols-2 gap-2">
-              {Object.entries({
-                "Farm Portions": "#00FF00", 
-                "Erven": "#0000FF",
-                "Holdings": "#FFFF00",
-                "Public Places": "#FF00FF"
-              }).map(([type, color]) => (
-                <div key={type} className="flex items-center">
-                  <div 
-                    className="w-3 h-3 rounded border mr-2"
-                    style={{ backgroundColor: color, borderColor: color }}
-                  ></div>
-                  <span className="text-sm text-gray-700">{type}</span>
+            <h5 className="font-medium text-gray-700 mb-2">📋 Data Layers:</h5>
+            <div className="grid grid-cols-1 gap-2">
+              {/* Property Boundaries */}
+              <div className="mb-2">
+                <h6 className="text-xs font-semibold text-gray-600 mb-1">Property Boundaries:</h6>
+                <div className="grid grid-cols-2 gap-1 ml-2">
+                  {Object.entries({
+                    "Farm Portions": "#00FF00", 
+                    "Erven": "#0000FF",
+                    "Holdings": "#FFFF00",
+                    "Public Places": "#FF00FF"
+                  }).map(([type, color]) => (
+                    <div key={type} className="flex items-center">
+                      <div 
+                        className="w-3 h-3 rounded border mr-2"
+                        style={{ backgroundColor: color, borderColor: color }}
+                      ></div>
+                      <span className="text-xs text-gray-700">{type}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+
+              {/* Infrastructure & Environment */}
+              <div>
+                <h6 className="text-xs font-semibold text-gray-600 mb-1">Infrastructure & Environment:</h6>
+                <div className="grid grid-cols-2 gap-1 ml-2">
+                  {Object.entries({
+                    "Roads": "#FF6347",
+                    "Water Bodies": "#00BFFF",
+                    "Contours": "#8B4513",
+                    "Environmental Constraints": "#228B22"
+                  }).map(([type, color]) => (
+                    <div key={type} className="flex items-center">
+                      <div 
+                        className="w-3 h-3 rounded border mr-2"
+                        style={{ backgroundColor: color, borderColor: color }}
+                      ></div>
+                      <span className="text-xs text-gray-700">{type}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
