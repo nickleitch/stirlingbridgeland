@@ -184,12 +184,17 @@ async def query_sanbi_bgis(latitude: float, longitude: float, service_name: str,
             
             # Use identify endpoint to find features at the given coordinates
             url = f"{service_config['url']}/identify"
+            
+            # For contours, use larger tolerance and search area to get multiple contour lines
+            tolerance = 1000 if "contour" in service_name else 50
+            map_extent_size = 0.05 if "contour" in service_name else 0.02
+            
             params = {
                 "geometry": json.dumps({"x": longitude, "y": latitude}),
                 "geometryType": "esriGeometryPoint",
                 "layers": f"visible:{layer_id}",
-                "tolerance": 50,  # Larger tolerance for environmental features
-                "mapExtent": f"{longitude-0.02},{latitude-0.02},{longitude+0.02},{latitude+0.02}",
+                "tolerance": tolerance,  # Much larger tolerance for contours
+                "mapExtent": f"{longitude-map_extent_size},{latitude-map_extent_size},{longitude+map_extent_size},{latitude+map_extent_size}",
                 "imageDisplay": "400,400,96",
                 "returnGeometry": "true",
                 "f": "json"
