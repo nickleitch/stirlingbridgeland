@@ -52,49 +52,19 @@ class ArcGISAPIService:
                 "cad_layer": "SDP_GEO_ADMIN_BOUND_001"
             },
             "world_admin_divisions": {
-                "url": f"{self.base_urls['living_atlas']}/World_Administrative_Divisions/FeatureServer/0", 
+                "url": f"{self.base_urls['services']}/Reference/World_Boundaries_and_Places/MapServer/1", 
                 "description": "World Administrative Divisions - States/Provinces",
                 "layer_type": "Administrative Boundaries",
                 "cad_layer": "SDP_GEO_ADMIN_DIV_001"
             },
             
-            # Demographics for Development Planning
-            "world_population": {
-                "url": f"{self.base_urls['living_atlas']}/World_Population_Density/FeatureServer/0",
-                "description": "World Population Density - Development planning data",
-                "layer_type": "Demographics",
-                "cad_layer": "SDP_DEMO_POP_DENS_001"
-            },
-            "world_urban_areas": {
-                "url": f"{self.base_urls['living_atlas']}/World_Urban_Areas/FeatureServer/0",
-                "description": "World Urban Areas - City boundaries and development zones",
-                "layer_type": "Urban Planning",
-                "cad_layer": "SDP_URBAN_AREAS_001"
-            },
-            
-            # Infrastructure
+            # Cities and populated places
             "world_cities": {
-                "url": f"{self.base_urls['living_atlas']}/World_Cities/FeatureServer/0",
+                "url": f"{self.base_urls['services']}/Reference/World_Boundaries_and_Places/MapServer/2",
                 "description": "World Cities - Municipal centers and major settlements",
                 "layer_type": "Infrastructure",
                 "cad_layer": "SDP_INFRA_CITIES_001"
             },
-            
-            # Environmental
-            "world_physical_features": {
-                "url": f"{self.base_urls['living_atlas']}/World_Physical_Features/FeatureServer/0",
-                "description": "World Physical Features - Natural landmarks and constraints",
-                "layer_type": "Environmental",
-                "cad_layer": "SDP_ENV_PHYS_FEAT_001"
-            },
-            
-            # Transportation
-            "world_highways": {
-                "url": f"{self.base_urls['living_atlas']}/World_Highways/FeatureServer/0",
-                "description": "World Highways - Major transportation corridors",
-                "layer_type": "Transportation",
-                "cad_layer": "SDP_TRANS_HIGHWAYS_001"
-            }
         }
         
         # Basemap Services
