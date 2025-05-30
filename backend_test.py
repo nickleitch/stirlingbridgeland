@@ -210,7 +210,7 @@ class BackendTester:
                 
                 details = f"Content-Type: {content_type}, Size: {content_length} bytes"
                 if content_disposition:
-                    details += f", Filename: {content_disposition.split('filename=')[1].strip('\"')}"
+                    details += f", Filename: {content_disposition.split('filename=')[1].strip('"')}"
                     
                 self.log_test("File Download Endpoint", True, details, response_time)
                 return True
