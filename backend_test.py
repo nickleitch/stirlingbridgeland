@@ -1048,10 +1048,13 @@ class StirlingBridgeAPITester:
         }
 
 def main():
-    # Use the public endpoint
+    # Use the public endpoint from the .env file
     backend_url = "https://413fb982-09b2-44b2-8258-7bfba70e9345.preview.emergentagent.com"
     
     print(f"Testing Stirling Bridge LandDev API at: {backend_url}")
+    print(f"\n{'='*80}")
+    print(f"MONGODB INTEGRATION TESTING")
+    print(f"{'='*80}")
     
     # Setup tester
     tester = StirlingBridgeAPITester(backend_url)
@@ -1062,154 +1065,125 @@ def main():
     # Test boundary types
     tester.test_boundary_types()
     
-    # Test identify land with the specific coordinates from the requirements
-    test_coordinates = [
-        # Test 1: Johannesburg Urban - The main test case from the requirements
-        (-26.2041, 28.0473, "Final Boundary Filter Test"),
-        
-        # Test 2: Slightly different coordinates to test edge case
-        (-26.2040, 28.0470, "Edge Case Test"),
-        
-        # Test 3: Cape Town Coastal - Different region test
-        (-33.9249, 18.4241, "Cape Town Coastal Test"),
-        
-        # Test 4: Gauteng Conservation - Environmental constraints test
-        (-26.4969, 28.2292, "Gauteng Conservation Test")
-    ]
-    
-    # Test valid coordinates
-    for lat, lng, name in test_coordinates:
-        print(f"\n\n{'='*80}")
-        print(f"TESTING LOCATION: {name} at {lat}, {lng}")
-        print(f"{'='*80}")
-        
-        success, response = tester.test_identify_land(lat, lng, name)
-        
-        # If we have a project ID, test the project retrieval and download files
-        if success and tester.project_id:
-            tester.test_get_project(tester.project_id)
-            tester.test_download_files(tester.project_id)
-            
-            # Additional verification for boundary filtering
-            if name == "Final Boundary Filter Test":
-                print("\n🔍 Verifying Boundary Filtering for Final Test:")
-                boundaries = response.get('boundaries', [])
-                print(f"  - Total boundaries returned from API: {len(boundaries)}")
-                
-                # Check for property boundaries
-                property_boundaries = [b for b in boundaries if b.get('layer_type') in 
-                                      ['Farm Portions', 'Erven', 'Holdings', 'Public Places']]
-                print(f"  - Property boundaries found: {len(property_boundaries)}")
-                
-                # The frontend will filter these to show only relevant ones
-                print("  - Note: Frontend will filter these to show only boundaries containing the search coordinates")
-                print("  - Expected frontend behavior: Show only 1-2 relevant boundaries out of the total")
-    
-    # Test invalid coordinates
-    tester.test_invalid_coordinates()
-    
-    # Test refresh functionality
-    print(f"\n\n{'='*80}")
-    print(f"TESTING REFRESH FUNCTIONALITY")
+    # Test MongoDB integration with the specific coordinates from the requirements
+    print(f"\n{'='*80}")
+    print(f"TESTING MONGODB PROJECT CREATION AND RETRIEVAL")
     print(f"{'='*80}")
     
-    # Test refresh by calling identify-land endpoint again with the same coordinates
-    # This simulates what happens when the refresh button is clicked in the frontend
-    if tester.project_id:
-        print("\n🔍 Testing Refresh Functionality (simulating frontend refresh button):")
-        
-        # Get the original project data
-        success, original_project = tester.test_get_project(tester.project_id)
-        
-        if success:
-            original_timestamp = original_project.get('created_at', '')
-            original_boundaries_count = len(original_project.get('boundaries', []))
-            
-            print(f"  - Original project timestamp: {original_timestamp}")
-            print(f"  - Original boundaries count: {original_boundaries_count}")
-            
-            # Wait a moment to ensure timestamp will be different
-            import time
-            time.sleep(1)
-            
-            # Call identify-land again with the same coordinates (simulating refresh)
-            print("\n  🔄 Simulating refresh by calling identify-land again...")
-            refresh_success, refresh_response = tester.test_identify_land(
-                original_project.get('coordinates', {}).get('latitude', 0),
-                original_project.get('coordinates', {}).get('longitude', 0),
-                "Refresh Test"
-            )
-            
-            if refresh_success:
-                refresh_timestamp = refresh_response.get('created_at', '')
-                refresh_boundaries_count = len(refresh_response.get('boundaries', []))
-                
-                print(f"  - Refreshed project timestamp: {refresh_timestamp}")
-                print(f"  - Refreshed boundaries count: {refresh_boundaries_count}")
-                
-                # Verify timestamp changed
-                if original_timestamp != refresh_timestamp:
-                    print("  ✅ Timestamp updated after refresh")
-                else:
-                    print("  ❌ Timestamp did not update after refresh")
-                
-                # Verify boundaries were reloaded
-                print(f"  - Original boundaries: {original_boundaries_count}")
-                print(f"  - Refreshed boundaries: {refresh_boundaries_count}")
-                
-                # Check if the data structure is consistent
-                print("\n  🔍 Verifying data structure consistency after refresh:")
-                
-                # Check that both responses have the same structure
-                original_keys = set(original_project.keys())
-                refresh_keys = set(refresh_response.keys())
-                
-                if original_keys == refresh_keys:
-                    print("  ✅ Response structure consistent after refresh")
-                else:
-                    print("  ❌ Response structure changed after refresh")
-                    print(f"  - Original keys: {original_keys}")
-                    print(f"  - Refresh keys: {refresh_keys}")
-                    print(f"  - Missing in refresh: {original_keys - refresh_keys}")
-                    print(f"  - New in refresh: {refresh_keys - original_keys}")
-                
-                # Check that boundary structure is consistent
-                if original_boundaries_count > 0 and refresh_boundaries_count > 0:
-                    original_boundary_keys = set(original_project.get('boundaries', [])[0].keys())
-                    refresh_boundary_keys = set(refresh_response.get('boundaries', [])[0].keys())
-                    
-                    if original_boundary_keys == refresh_boundary_keys:
-                        print("  ✅ Boundary structure consistent after refresh")
-                    else:
-                        print("  ❌ Boundary structure changed after refresh")
-                        print(f"  - Original boundary keys: {original_boundary_keys}")
-                        print(f"  - Refresh boundary keys: {refresh_boundary_keys}")
-                
-                print("\n  🔍 Refresh functionality verification:")
-                print("  ✅ Backend API supports refreshing project data")
-                print("  ✅ New timestamp generated on refresh")
-                print("  ✅ Boundaries reloaded on refresh")
-                print("  ✅ Data structure maintained for frontend compatibility")
+    # Create a test project in MongoDB
+    success, response = tester.test_identify_land(
+        -26.2041, 
+        28.0473, 
+        "Test MongoDB Project"
+    )
     
-    # Generate summary
-    summary = tester.generate_summary()
+    # If we have a project ID, test the project retrieval and download files
+    if success and tester.project_id:
+        # Test project retrieval
+        tester.test_get_project(tester.project_id)
+        
+        # Test file downloads
+        tester.test_download_files(tester.project_id)
+        
+        # Test listing all projects
+        tester.test_list_projects()
+        
+        # Test error handling for non-existent project
+        tester.test_nonexistent_project()
+        
+        # Test data persistence
+        tester.test_data_persistence()
     
-    # Print results
+    # Generate MongoDB integration test summary
+    print(f"\n{'='*80}")
+    print(f"MONGODB INTEGRATION TEST SUMMARY")
+    print(f"{'='*80}")
+    
     print(f"\n📊 Tests passed: {tester.tests_passed}/{tester.tests_run}")
-    print(f"\n🔍 BOUNDARY FILTERING VERIFICATION:")
-    print(f"  - Backend API returns all boundaries in the area")
-    print(f"  - Frontend implements ray casting algorithm for point-in-polygon detection")
-    print(f"  - Frontend filters boundaries to show only those containing search coordinates")
-    print(f"  - Frontend enhances styling with thicker lines (weight: 3) and higher opacity (0.9)")
-    print(f"  - Frontend shows accurate count of filtered boundaries in layer panel")
-    print(f"  - Frontend console logs show detailed filtering process")
     
-    print(f"\n🔍 REFRESH FUNCTIONALITY VERIFICATION:")
-    print(f"  - Backend API supports refreshing project data via identify-land endpoint")
-    print(f"  - Frontend refresh button triggers API call to reload data")
-    print(f"  - Timestamp updates on refresh")
-    print(f"  - Layer states reset to show available data after refresh")
-    print(f"  - Loading states and UI feedback provided during refresh")
+    # MongoDB-specific test results
+    print(f"\n🔍 MONGODB INTEGRATION VERIFICATION:")
+    
+    # 1. Database Connection
+    print(f"  1. Database Connection:")
+    if tester.mongodb_test_results.get("project_creation", {}).get("success", False):
+        print(f"     ✅ MongoDB connection established successfully")
+    else:
+        print(f"     ❌ MongoDB connection failed")
+    
+    # 2. Project Creation
+    print(f"  2. Project Creation:")
+    if tester.mongodb_test_results.get("project_creation", {}).get("success", False):
+        project_id = tester.mongodb_test_results.get("project_creation", {}).get("project_id", "unknown")
+        project_name = tester.mongodb_test_results.get("project_creation", {}).get("project_name", "unknown")
+        print(f"     ✅ Successfully created project in MongoDB")
+        print(f"     - Project ID: {project_id}")
+        print(f"     - Project Name: {project_name}")
+    else:
+        print(f"     ❌ Failed to create project in MongoDB")
+    
+    # 3. Project Retrieval
+    print(f"  3. Project Retrieval:")
+    if tester.mongodb_test_results.get("list_projects", {}).get("success", False):
+        project_count = tester.mongodb_test_results.get("list_projects", {}).get("project_count", 0)
+        print(f"     ✅ Successfully retrieved {project_count} projects from MongoDB")
+    else:
+        print(f"     ❌ Failed to retrieve projects from MongoDB")
+    
+    # 4. Individual Project
+    print(f"  4. Individual Project Retrieval:")
+    if tester.test_results.get(f"get_project_{tester.project_id}", {}).get("success", False):
+        print(f"     ✅ Successfully retrieved individual project from MongoDB")
+    else:
+        print(f"     ❌ Failed to retrieve individual project from MongoDB")
+    
+    # 5. File Downloads
+    print(f"  5. File Downloads:")
+    if tester.mongodb_test_results.get("download_files", {}).get("success", False):
+        filename = tester.mongodb_test_results.get("download_files", {}).get("filename", "unknown")
+        print(f"     ✅ Successfully downloaded files from MongoDB-stored project")
+        print(f"     - Filename: {filename}")
+    else:
+        print(f"     ❌ Failed to download files from MongoDB-stored project")
+    
+    # 6. Data Persistence
+    print(f"  6. Data Persistence:")
+    if tester.mongodb_test_results.get("data_persistence", {}).get("success", False):
+        persistence_id = tester.mongodb_test_results.get("data_persistence", {}).get("project_id", "unknown")
+        print(f"     ✅ Data persists in MongoDB across simulated server restarts")
+        print(f"     - Persistence Test Project ID: {persistence_id}")
+    else:
+        error = tester.mongodb_test_results.get("data_persistence", {}).get("error", "unknown error")
+        print(f"     ❌ Data persistence test failed: {error}")
+    
+    # 7. Error Handling
+    print(f"  7. Error Handling:")
+    if tester.mongodb_test_results.get("nonexistent_project", {}).get("success", False):
+        print(f"     ✅ Properly handles non-existent projects with 404 error")
+    else:
+        print(f"     ❌ Failed to properly handle non-existent projects")
+    
+    # Overall MongoDB integration status
+    mongodb_tests = [
+        tester.mongodb_test_results.get("project_creation", {}).get("success", False),
+        tester.mongodb_test_results.get("list_projects", {}).get("success", False),
+        tester.test_results.get(f"get_project_{tester.project_id}", {}).get("success", False),
+        tester.mongodb_test_results.get("download_files", {}).get("success", False),
+        tester.mongodb_test_results.get("data_persistence", {}).get("success", False),
+        tester.mongodb_test_results.get("nonexistent_project", {}).get("success", False)
+    ]
+    
+    mongodb_success_count = sum(1 for test in mongodb_tests if test)
+    mongodb_test_count = len(mongodb_tests)
+    
+    print(f"\n📊 MongoDB Integration Tests: {mongodb_success_count}/{mongodb_test_count} passed")
+    
+    if mongodb_success_count == mongodb_test_count:
+        print(f"✅ MongoDB integration is fully functional")
+    elif mongodb_success_count >= mongodb_test_count * 0.75:
+        print(f"⚠️ MongoDB integration is mostly functional with some issues")
+    else:
+        print(f"❌ MongoDB integration has significant issues")
     
     return 0 if tester.tests_passed == tester.tests_run else 1
 
