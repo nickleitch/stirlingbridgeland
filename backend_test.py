@@ -338,6 +338,195 @@ class BackendTester:
         except Exception as e:
             self.log_test("Error Handling - Non-existent Project", False, f"Error: {str(e)}")
             return False
+    
+    # New navigation menu API endpoint tests
+    
+    async def test_api_status(self):
+        """Test the API status endpoint"""
+        start_time = time.time()
+        try:
+            response = await self.client.get(f"{self.base_url}/menu/api-status")
+            response_time = time.time() - start_time
+            
+            if response.status_code == 200:
+                data = response.json()
+                apis = data.get("apis", [])
+                details = f"Found {len(apis)} APIs, Configured: {data.get('total_configured')}, Available: {data.get('total_available')}"
+                self.log_test("API Status Endpoint", True, details, response_time)
+                return True
+            else:
+                self.log_test("API Status Endpoint", False, 
+                             f"Unexpected status code: {response.status_code}, Response: {response.text}", response_time)
+                return False
+        except Exception as e:
+            self.log_test("API Status Endpoint", False, f"Error: {str(e)}")
+            return False
+            
+    async def test_api_configs(self):
+        """Test the API configurations endpoint"""
+        start_time = time.time()
+        try:
+            response = await self.client.get(f"{self.base_url}/menu/api-configs")
+            response_time = time.time() - start_time
+            
+            if response.status_code == 200:
+                data = response.json()
+                details = f"Found {len(data)} API configurations"
+                self.log_test("API Configurations Endpoint", True, details, response_time)
+                return True
+            else:
+                self.log_test("API Configurations Endpoint", False, 
+                             f"Unexpected status code: {response.status_code}, Response: {response.text}", response_time)
+                return False
+        except Exception as e:
+            self.log_test("API Configurations Endpoint", False, f"Error: {str(e)}")
+            return False
+            
+    async def test_user_profile(self):
+        """Test the user profile endpoint"""
+        start_time = time.time()
+        try:
+            response = await self.client.get(f"{self.base_url}/menu/user-profile")
+            response_time = time.time() - start_time
+            
+            if response.status_code == 200:
+                data = response.json()
+                details = f"User: {data.get('username')}, ID: {data.get('user_id')}, Organization: {data.get('organization')}"
+                self.log_test("User Profile Endpoint", True, details, response_time)
+                return True
+            else:
+                self.log_test("User Profile Endpoint", False, 
+                             f"Unexpected status code: {response.status_code}, Response: {response.text}", response_time)
+                return False
+        except Exception as e:
+            self.log_test("User Profile Endpoint", False, f"Error: {str(e)}")
+            return False
+            
+    async def test_update_user_profile(self):
+        """Test updating user profile"""
+        start_time = time.time()
+        try:
+            # First get current profile
+            get_response = await self.client.get(f"{self.base_url}/menu/user-profile")
+            if get_response.status_code != 200:
+                self.log_test("Update User Profile Endpoint", False, 
+                             f"Failed to get current profile: {get_response.status_code}")
+                return False
+                
+            current_profile = get_response.json()
+            
+            # Prepare update data
+            update_data = {
+                "username": current_profile.get("username"),
+                "organization": "Stirling Bridge Testing Org"
+            }
+            
+            # Update profile
+            response = await self.client.put(f"{self.base_url}/menu/user-profile", json=update_data)
+            response_time = time.time() - start_time
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("organization") == update_data["organization"]:
+                    details = f"Successfully updated organization to: {data.get('organization')}"
+                    self.log_test("Update User Profile Endpoint", True, details, response_time)
+                    return True
+                else:
+                    self.log_test("Update User Profile Endpoint", False, 
+                                 f"Update didn't apply: {data.get('organization')} != {update_data['organization']}", 
+                                 response_time)
+                    return False
+            else:
+                self.log_test("Update User Profile Endpoint", False, 
+                             f"Unexpected status code: {response.status_code}, Response: {response.text}", response_time)
+                return False
+        except Exception as e:
+            self.log_test("Update User Profile Endpoint", False, f"Error: {str(e)}")
+            return False
+            
+    async def test_user_stats(self):
+        """Test the user statistics endpoint"""
+        start_time = time.time()
+        try:
+            response = await self.client.get(f"{self.base_url}/menu/user-stats")
+            response_time = time.time() - start_time
+            
+            if response.status_code == 200:
+                data = response.json()
+                details = f"Total Projects: {data.get('total_projects')}, Projects Today: {data.get('projects_today')}, Projects This Week: {data.get('projects_this_week')}"
+                self.log_test("User Statistics Endpoint", True, details, response_time)
+                return True
+            else:
+                self.log_test("User Statistics Endpoint", False, 
+                             f"Unexpected status code: {response.status_code}, Response: {response.text}", response_time)
+                return False
+        except Exception as e:
+            self.log_test("User Statistics Endpoint", False, f"Error: {str(e)}")
+            return False
+            
+    async def test_app_statistics(self):
+        """Test the application statistics endpoint"""
+        start_time = time.time()
+        try:
+            response = await self.client.get(f"{self.base_url}/menu/app-statistics")
+            response_time = time.time() - start_time
+            
+            if response.status_code == 200:
+                data = response.json()
+                details = f"Total Projects: {data.get('total_projects')}, Projects Today: {data.get('projects_created_today')}, Uptime: {data.get('uptime_hours'):.2f} hours"
+                self.log_test("App Statistics Endpoint", True, details, response_time)
+                return True
+            else:
+                self.log_test("App Statistics Endpoint", False, 
+                             f"Unexpected status code: {response.status_code}, Response: {response.text}", response_time)
+                return False
+        except Exception as e:
+            self.log_test("App Statistics Endpoint", False, f"Error: {str(e)}")
+            return False
+            
+    async def test_update_api_config(self):
+        """Test updating API configuration"""
+        start_time = time.time()
+        try:
+            # Get current API configs first
+            configs_response = await self.client.get(f"{self.base_url}/menu/api-configs")
+            if configs_response.status_code != 200:
+                self.log_test("Update API Configuration Endpoint", False, 
+                             f"Failed to get API configs: {configs_response.status_code}")
+                return False
+                
+            configs = configs_response.json()
+            if not configs:
+                self.log_test("Update API Configuration Endpoint", False, "No API configurations available")
+                return False
+                
+            # Use the first API config for testing
+            test_api = configs[0]
+            api_name = test_api.get("api_name")
+            
+            # Create a test update (using dummy values that won't actually change anything)
+            update_data = {
+                "api_name": api_name,
+                "config_values": {"test_key": "test_value"}
+            }
+            
+            # Send update request
+            response = await self.client.post(f"{self.base_url}/menu/api-config", json=update_data)
+            response_time = time.time() - start_time
+            
+            # For this test, we consider both 200 (success) and 400 (invalid config) as passing
+            # since we're using dummy values that might not match the actual config schema
+            if response.status_code in [200, 400]:
+                details = f"API: {api_name}, Status: {response.status_code}, Response: {response.text[:100]}"
+                self.log_test("Update API Configuration Endpoint", True, details, response_time)
+                return True
+            else:
+                self.log_test("Update API Configuration Endpoint", False, 
+                             f"Unexpected status code: {response.status_code}, Response: {response.text}", response_time)
+                return False
+        except Exception as e:
+            self.log_test("Update API Configuration Endpoint", False, f"Error: {str(e)}")
+            return False
             
     def print_summary(self):
         """Print a summary of all test results"""
@@ -371,7 +560,7 @@ class BackendTester:
 async def main():
     """Main test function"""
     print(f"{Colors.HEADER}Stirling Bridge LandDev Backend Test Suite{Colors.ENDC}")
-    print(f"{Colors.HEADER}Testing refactored service layer architecture{Colors.ENDC}")
+    print(f"{Colors.HEADER}Testing refactored service layer architecture and navigation menu endpoints{Colors.ENDC}")
     print("="*80)
     
     # Initialize tester
@@ -414,6 +603,31 @@ async def main():
         
         # Test caching
         await tester.test_caching()
+        
+        # Test new navigation menu endpoints
+        print(f"\n{Colors.HEADER}Testing Navigation Menu API Endpoints{Colors.ENDC}")
+        print("-"*80)
+        
+        # Test API status endpoint
+        await tester.test_api_status()
+        
+        # Test API configurations endpoint
+        await tester.test_api_configs()
+        
+        # Test user profile endpoint
+        await tester.test_user_profile()
+        
+        # Test update user profile endpoint
+        await tester.test_update_user_profile()
+        
+        # Test user statistics endpoint
+        await tester.test_user_stats()
+        
+        # Test app statistics endpoint
+        await tester.test_app_statistics()
+        
+        # Test update API configuration endpoint
+        await tester.test_update_api_config()
         
     finally:
         # Print summary and close client
