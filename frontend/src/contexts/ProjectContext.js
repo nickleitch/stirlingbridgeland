@@ -121,65 +121,39 @@ export const ProjectProvider = ({ children }) => {
   const loadProjects = async () => {
     try {
       dispatch({ type: PROJECT_ACTIONS.SET_LOADING, payload: true });
-      
-      // First load from localStorage for immediate display
-      let localProjects = [];
-      const savedProjects = localStorage.getItem('stirling_projects');
-      if (savedProjects) {
-        try {
-          const parsedProjects = JSON.parse(savedProjects);
-          localProjects = Array.isArray(parsedProjects) ? parsedProjects : [];
-          // Remove duplicates by ID
-          localProjects = localProjects.filter((project, index, self) => 
-            index === self.findIndex(p => p.id === project.id)
-          );
-          dispatch({ type: PROJECT_ACTIONS.SET_PROJECTS, payload: localProjects });
-        } catch (error) {
-          console.error('Error parsing saved projects:', error);
-          localStorage.removeItem('stirling_projects');
-        }
-      }
+      dispatch({ type: PROJECT_ACTIONS.CLEAR_ERROR });
 
-      // Then sync with database
-      try {
-        const response = await projectAPI.listProjects();
-        if (response.success && response.data.projects) {
-          const dbProjects = response.data.projects.map(project => ({
-            id: project.id,
-            name: project.name,
-            coordinates: project.coordinates,
-            created: project.created,
-            lastModified: project.lastModified,
-            layers: {},
-            data: null
-          }));
-          
-          // Merge and deduplicate local and database projects
-          const mergedProjects = [...localProjects];
-          dbProjects.forEach(dbProject => {
-            const existingIndex = mergedProjects.findIndex(p => p.id === dbProject.id);
-            if (existingIndex >= 0) {
-              // Update existing project with latest data from database
-              mergedProjects[existingIndex] = dbProject;
-            } else {
-              // Add new project from database
-              mergedProjects.push(dbProject);
-            }
-          });
-          
-          // Remove duplicates one more time and save
-          const finalProjects = mergedProjects.filter((project, index, self) => 
-            index === self.findIndex(p => p.id === project.id)
-          );
-          
-          localStorage.setItem('stirling_projects', JSON.stringify(finalProjects));
-          dispatch({ type: PROJECT_ACTIONS.SET_PROJECTS, payload: finalProjects });
+      const response = await projectAPI.getProjects();
+      
+      if (response.success) {
+        const dbProjects = response.data.projects || [];
+        
+        // Check for sync issues between localStorage and database
+        const localProjects = JSON.parse(localStorage.getItem('projects') || '[]');
+        const localProjectIds = new Set(localProjects.map(p => p.id));
+        const dbProjectIds = new Set(dbProjects.map(p => p.id));
+        
+        // If there are projects in localStorage that don't exist in database, clean up
+        const orphanedProjects = localProjects.filter(p => !dbProjectIds.has(p.id));
+        if (orphanedProjects.length > 0) {
+          console.warn(`Found ${orphanedProjects.length} orphaned projects in localStorage, cleaning up...`);
+          // Remove orphaned projects from localStorage
+          const cleanedProjects = localProjects.filter(p => dbProjectIds.has(p.id));
+          localStorage.setItem('projects', JSON.stringify(cleanedProjects));
         }
-      } catch (error) {
-        console.log('Database sync not available, using localStorage only:', error);
+        
+        dispatch({ 
+          type: PROJECT_ACTIONS.LOAD_PROJECTS_SUCCESS, 
+          payload: dbProjects 
+        });
+        return { success: true, data: dbProjects };
+      } else {
+        throw new Error(response.error || 'Failed to load projects');
       }
     } catch (error) {
+      console.error('Error loading projects:', error);
       dispatch({ type: PROJECT_ACTIONS.SET_ERROR, payload: error.message });
+      return { success: false, error: error.message };
     } finally {
       dispatch({ type: PROJECT_ACTIONS.SET_LOADING, payload: false });
     }
