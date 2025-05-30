@@ -1,5 +1,4 @@
 import React, { memo } from 'react';
-import ProjectProgressSummary from './ProjectProgressSummary';
 import LayerSidebar from '../layers/LayerSidebar';
 import MapContainer from '../map/MapContainer';
 
