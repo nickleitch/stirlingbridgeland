@@ -277,6 +277,18 @@ Stirling Bridge LandDev App - Complete Development Summary: Professional-grade l
           comment: "Statistics endpoint (/api/statistics) is working correctly. Returns application information, database statistics, and configuration details."
 
 ## frontend:
+  - task: "Project Progress Summary"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/components/dashboard/ProjectProgressSummary.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Added new Project Progress Summary visualization showing circular progress indicators for each layer section. The component displays 6 circular progress indicators (one for each layer section) showing the percentage of enabled layers in that section. Each circle shows segments filled based on the percentage, with teal color for filled segments and light gray for empty ones."
+
   - task: "Component Architecture"
     implemented: true
     working: true
