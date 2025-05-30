@@ -170,6 +170,9 @@ class ArcGISAPIService:
         service = self.land_dev_services[service_key]
         
         try:
+            # Get OAuth2 token
+            token = await self.get_access_token()
+            
             async with httpx.AsyncClient(timeout=self.base_timeout) as client:
                 # Create point geometry
                 point_geometry = {
