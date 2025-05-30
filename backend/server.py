@@ -59,6 +59,11 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup():
     """Application startup initialization"""
+    import time
+    
+    # Set application start time for uptime calculation
+    app.state.start_time = time.time()
+    
     logger.info(f"🚀 Starting {settings.app_name} v{settings.app_version}")
     
     # Connect to database
