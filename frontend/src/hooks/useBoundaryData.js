@@ -104,30 +104,41 @@ export const useBoundaryData = () => {
     const projectBoundaries = boundaries || currentProject?.data || [];
     if (!projectBoundaries.length || !currentProject) return [];
     
-    // First filter to only relevant boundaries for the search coordinates
-    const relevantBoundaries = getRelevantBoundaries(
-      projectBoundaries, 
-      currentProject.coordinates.latitude, 
-      currentProject.coordinates.longitude
-    );
+    // For Base Data layers, show all available boundaries (less restrictive filtering)
+    const isBaseDataLayer = [
+      'property_boundaries', 'zoning_designations', 'roads_existing', 
+      'topography_basic', 'water_bodies', 'labels_primary', 'survey_control',
+      'coordinate_grid', 'contours_major', 'spot_levels'
+    ].includes(layerId);
     
-    console.log(`Filtering ${projectBoundaries.length} total boundaries to ${relevantBoundaries.length} relevant boundaries`);
+    let boundariesToFilter = projectBoundaries;
     
-    // Map layer IDs to boundary types from the relevant boundaries only
+    // Only apply restrictive filtering for non-base data layers
+    if (!isBaseDataLayer) {
+      boundariesToFilter = getRelevantBoundaries(
+        projectBoundaries, 
+        currentProject.coordinates.latitude, 
+        currentProject.coordinates.longitude
+      );
+    }
+    
+    console.log(`Layer ${layerId} (Base Data: ${isBaseDataLayer}): Filtering ${projectBoundaries.length} total boundaries to ${boundariesToFilter.length} boundaries`);
+    
+    // Map layer IDs to boundary types
     switch(layerId) {
       case 'property_boundaries':
-        return relevantBoundaries.filter(boundary => 
+        return boundariesToFilter.filter(boundary => 
           ['Farm Portions', 'Erven', 'Holdings', 'Public Places'].includes(boundary.layer_type)
         );
       case 'roads_existing':
-        return relevantBoundaries.filter(boundary => boundary.layer_type === 'Roads');
+        return boundariesToFilter.filter(boundary => boundary.layer_type === 'Roads');
       case 'topography_basic':
       case 'contours_major':
-        return relevantBoundaries.filter(boundary => boundary.layer_type === 'Contours');
+        return boundariesToFilter.filter(boundary => boundary.layer_type === 'Contours');
       case 'water_bodies':
-        return relevantBoundaries.filter(boundary => boundary.layer_type === 'Water Bodies');
+        return boundariesToFilter.filter(boundary => boundary.layer_type === 'Water Bodies');
       case 'environmental_constraints':
-        return relevantBoundaries.filter(boundary => boundary.layer_type === 'Environmental Constraints');
+        return boundariesToFilter.filter(boundary => boundary.layer_type === 'Environmental Constraints');
       default:
         // For other layers, use the layer type mapping
         const layerType = Object.keys(LAYER_TYPE_MAPPING).find(type => {
@@ -136,7 +147,7 @@ export const useBoundaryData = () => {
         });
         
         if (layerType) {
-          return relevantBoundaries.filter(boundary => boundary.layer_type === layerType);
+          return boundariesToFilter.filter(boundary => boundary.layer_type === layerType);
         }
         return [];
     }
