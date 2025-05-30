@@ -69,12 +69,13 @@ const ProgressCircle = memo(({ percentage, title, onClick }) => {
 
 ProgressCircle.displayName = 'ProgressCircle';
 
-const ProjectProgressSummary = memo(() => {
-  const { currentProject } = useProject();
+const ProjectProgressSummary = memo(({ project }) => {
   const { layerStates } = useLayer();
 
-  // Calculate progress for each section
+  // Calculate progress for each section based on the project
   const sectionProgress = useMemo(() => {
+    if (!project) return [];
+    
     return Object.entries(LAYER_SECTIONS).map(([sectionName, section]) => {
       const totalLayers = section.layers.length;
       const enabledLayers = section.layers.filter(layer => layerStates[layer.id]).length;
@@ -87,13 +88,13 @@ const ProjectProgressSummary = memo(() => {
         totalLayers
       };
     });
-  }, [layerStates]);
+  }, [layerStates, project]);
 
   const handleStepClick = (stepData) => {
-    console.log(`Clicked on ${stepData.name}: ${stepData.percentage}% (${stepData.enabledLayers}/${stepData.totalLayers} layers enabled)`);
+    console.log(`Clicked on ${stepData.name}: ${stepData.percentage}% (${stepData.enabledLayers}/${stepData.totalLayers} layers enabled) for project: ${project?.name}`);
   };
 
-  if (!currentProject) return null;
+  if (!project) return null;
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
