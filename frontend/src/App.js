@@ -89,7 +89,12 @@ function App() {
     "Additional Design": false
   });
   const [result, setResult] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newProjectForm, setNewProjectForm] = useState({
+    name: '',
+    latitude: '',
+    longitude: ''
+  });
   const mapRef = useRef();
 
   // Initialize projects from localStorage
