@@ -183,27 +183,53 @@ async def query_sanbi_bgis(latitude: float, longitude: float, service_name: str,
                 print(f"Unknown SANBI service: {service_name}")
                 return {"results": []}
             
-            # Use identify endpoint to find features at the given coordinates
-            url = f"{service_config['url']}/identify"
+            # For contours (layers 6,7), use query endpoint for better results
+            if layer_id in [6, 7]:  # Contour layers
+                url = f"{service_config['url']}/{layer_id}/query"
+                params = {
+                    "geometry": json.dumps({"x": longitude, "y": latitude}),
+                    "geometryType": "esriGeometryPoint",
+                    "spatialRel": "esriSpatialRelIntersects",
+                    "distance": 2000,  # 2km search radius for contours
+                    "units": "esriSRUnit_Meter",
+                    "outFields": "HEIGHT,OBJECTID",
+                    "returnGeometry": "true",
+                    "f": "json"
+                }
+                
+                response = await client.get(url, params=params)
+                response.raise_for_status()
+                data = response.json()
+                
+                # Convert query response to identify format for compatibility
+                results = []
+                for feature in data.get("features", []):
+                    results.append({
+                        "layerId": layer_id,
+                        "layerName": f"Contours {'north' if layer_id == 6 else 'south'}",
+                        "geometry": feature.get("geometry"),
+                        "attributes": feature.get("attributes", {})
+                    })
+                
+                return {"results": results}
             
-            # For contours, use larger tolerance and search area to get multiple contour lines
-            tolerance = 1000 if layer_id in [6, 7] else 50  # Check layer IDs directly for contours
-            map_extent_size = 0.05 if layer_id in [6, 7] else 0.02
-            
-            params = {
-                "geometry": json.dumps({"x": longitude, "y": latitude}),
-                "geometryType": "esriGeometryPoint",
-                "layers": f"visible:{layer_id}",
-                "tolerance": tolerance,  # Much larger tolerance for contours
-                "mapExtent": f"{longitude-map_extent_size},{latitude-map_extent_size},{longitude+map_extent_size},{latitude+map_extent_size}",
-                "imageDisplay": "400,400,96",
-                "returnGeometry": "true",
-                "f": "json"
-            }
-            
-            response = await client.get(url, params=params)
-            response.raise_for_status()
-            return response.json()
+            else:  # Other layers use identify
+                url = f"{service_config['url']}/identify"
+                params = {
+                    "geometry": json.dumps({"x": longitude, "y": latitude}),
+                    "geometryType": "esriGeometryPoint",
+                    "layers": f"visible:{layer_id}",
+                    "tolerance": 50,
+                    "mapExtent": f"{longitude-0.02},{latitude-0.02},{longitude+0.02},{latitude+0.02}",
+                    "imageDisplay": "400,400,96",
+                    "returnGeometry": "true",
+                    "f": "json"
+                }
+                
+                response = await client.get(url, params=params)
+                response.raise_for_status()
+                return response.json()
+                
     except Exception as e:
         print(f"Error querying SANBI BGIS for {service_name}, layer {layer_id}: {str(e)}")
         return {"results": []}
