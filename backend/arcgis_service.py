@@ -119,6 +119,52 @@ class ArcGISAPIService:
             }
         }
     
+    async def get_access_token(self) -> Optional[str]:
+        """
+        Get OAuth2 access token using client credentials
+        Caches token until expiration
+        """
+        # Check if we have a valid cached token
+        if (self.access_token and self.token_expires and 
+            datetime.now() < self.token_expires - timedelta(minutes=5)):
+            return self.access_token
+        
+        if not self.client_id or not self.client_secret:
+            print("Warning: ArcGIS client credentials not configured")
+            return None
+        
+        try:
+            async with httpx.AsyncClient(timeout=self.base_timeout) as client:
+                # OAuth2 token endpoint
+                token_url = "https://www.arcgis.com/sharing/rest/oauth2/token"
+                
+                data = {
+                    "client_id": self.client_id,
+                    "client_secret": self.client_secret,
+                    "grant_type": "client_credentials"
+                }
+                
+                response = await client.post(token_url, data=data)
+                response.raise_for_status()
+                
+                token_data = response.json()
+                
+                if "access_token" in token_data:
+                    self.access_token = token_data["access_token"]
+                    # Cache token for the duration minus 5 minutes for safety
+                    expires_in = token_data.get("expires_in", 7200)  # Default 2 hours
+                    self.token_expires = datetime.now() + timedelta(seconds=expires_in)
+                    
+                    print(f"✅ ArcGIS OAuth2 token obtained, expires in {expires_in} seconds")
+                    return self.access_token
+                else:
+                    print(f"❌ Error getting ArcGIS token: {token_data}")
+                    return None
+                    
+        except Exception as e:
+            print(f"❌ Error obtaining ArcGIS OAuth2 token: {str(e)}")
+            return None
+    
     async def test_connection(self) -> Dict[str, Any]:
         """Test ArcGIS API connectivity and return service status"""
         try:
