@@ -239,21 +239,29 @@ function App() {
     
     try {
       console.log(`🚀 Creating project: ${newProjectForm.name.trim()} at ${latitude}, ${longitude}`);
+      console.log(`📡 Backend URL: ${import.meta.env.REACT_APP_BACKEND_URL}`);
+      
+      const requestBody = {
+        name: newProjectForm.name.trim(),
+        latitude: latitude,
+        longitude: longitude
+      };
+      console.log('📤 Request body:', requestBody);
       
       const response = await fetch(`${import.meta.env.REACT_APP_BACKEND_URL}/api/identify-land`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          name: newProjectForm.name.trim(),
-          latitude: latitude,
-          longitude: longitude
-        })
+        body: JSON.stringify(requestBody)
       });
       
+      console.log('📥 Response status:', response.status, response.statusText);
+      
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.log('❌ Response error text:', errorText);
+        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
       }
       
       const result = await response.json();
