@@ -280,7 +280,7 @@ Stirling Bridge LandDev App - Complete Development Summary: Professional-grade l
   - task: "Project Progress Summary"
     implemented: true
     working: true
-    file: "/app/frontend/src/components/dashboard/ProjectProgressSummary.js"
+    file: "/app/frontend/src/components/projects/ProjectProgressSummaryForList.js"
     stuck_count: 0
     priority: "high"
     needs_retesting: false
@@ -291,6 +291,9 @@ Stirling Bridge LandDev App - Complete Development Summary: Professional-grade l
         - working: true
           agent: "testing"
           comment: "Project Progress Summary visualization is working correctly. The component displays 5 circular progress indicators (Base Data, Initial Concept, Specialist Input, Environmental Screening, Additional Design) showing the percentage of enabled layers in each section. The progress indicators update dynamically when layers are toggled, showing the correct percentage. The visual design matches the requirements with teal color for filled segments and light gray for empty ones. The component is responsive on mobile devices, though the layout adjusts to fit the smaller screen. One minor issue: only 5 sections are shown instead of the requested 6 (Final SDP section is missing), but this doesn't affect core functionality."
+        - working: true
+          agent: "testing"
+          comment: "Successfully tested the Project Progress Summary visualization that has been moved from the dashboard to the projects page. Each project now shows its own progress summary above the project card with 6 circular progress indicators (Base Data, Initial Concept, Specialist Input, Environmental Screening, Additional Design, Final SDP). The progress calculation is now based on available boundary data for each individual project, showing '0 boundaries available' for projects without data. The dashboard no longer shows the progress summary, which now only appears on the projects list page. The visual design is consistent with the previous implementation, showing the project name on the left and progress circles across. The layout is responsive for mobile devices."
 
   - task: "Component Architecture"
     implemented: true
