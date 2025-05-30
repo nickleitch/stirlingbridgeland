@@ -46,7 +46,7 @@ class ArcGISAPIService:
         self.land_dev_services = {
             # Administrative Boundaries
             "world_countries": {
-                "url": f"{self.base_urls['living_atlas']}/World_Countries_Generalized/FeatureServer/0",
+                "url": f"{self.base_urls['services']}/Reference/World_Boundaries_and_Places/MapServer/0",
                 "description": "World Countries - Administrative boundaries",
                 "layer_type": "Administrative Boundaries",
                 "cad_layer": "SDP_GEO_ADMIN_BOUND_001"
