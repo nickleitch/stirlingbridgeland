@@ -111,9 +111,50 @@ class StirlingBridgeAPITester:
             
             # Check for professional GIS layer structure
             self._check_professional_gis_layers(response)
+            
+            # MongoDB Test: Verify project was created in database
+            self._test_mongodb_project_creation(self.project_id, project_name)
         
         self.test_results[test_name] = {"success": success, "response": response}
         return success, response
+        
+    def _test_mongodb_project_creation(self, project_id, project_name):
+        """Verify that a project was created in MongoDB"""
+        print("\n🔍 MongoDB Test: Verifying project creation in database...")
+        
+        # Test retrieving the project to verify it was stored in MongoDB
+        success, project_data = self.test_get_project(project_id)
+        
+        if success:
+            print(f"  ✅ Project successfully stored in MongoDB")
+            print(f"  - Project ID: {project_id}")
+            print(f"  - Project Name: {project_data.get('name')}")
+            
+            # Verify project data structure
+            expected_fields = ['id', 'name', 'coordinates', 'created', 'lastModified']
+            missing_fields = [field for field in expected_fields if field not in project_data]
+            
+            if not missing_fields:
+                print(f"  ✅ Project data structure is correct")
+                self.mongodb_test_results["project_creation"] = {
+                    "success": True,
+                    "project_id": project_id,
+                    "project_name": project_data.get('name')
+                }
+            else:
+                print(f"  ❌ Project data structure is missing fields: {', '.join(missing_fields)}")
+                self.mongodb_test_results["project_creation"] = {
+                    "success": False,
+                    "missing_fields": missing_fields
+                }
+        else:
+            print(f"  ❌ Failed to retrieve project from MongoDB")
+            self.mongodb_test_results["project_creation"] = {
+                "success": False,
+                "error": "Failed to retrieve project from database"
+            }
+            
+        return self.mongodb_test_results["project_creation"]
         
     def _check_parent_farm_boundaries(self, response):
         """Check that Parent Farm Boundaries are not present in the response"""
