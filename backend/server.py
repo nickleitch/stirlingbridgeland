@@ -393,8 +393,8 @@ async def query_additional_boundaries(latitude: float, longitude: float):
         # Get comprehensive land development data from ArcGIS
         arcgis_data = await arcgis_service.get_land_development_data(
             latitude, longitude, 
-            # Select most relevant services for land development
-            services=['world_countries', 'world_admin_divisions', 'world_urban_areas', 'world_cities']
+            # Select the simplified public services
+            services=['world_countries', 'world_admin_divisions', 'world_cities']
         )
         
         if arcgis_data.get("features"):
