@@ -143,7 +143,7 @@ export const ProjectProvider = ({ children }) => {
         }
         
         dispatch({ 
-          type: PROJECT_ACTIONS.LOAD_PROJECTS_SUCCESS, 
+          type: PROJECT_ACTIONS.SET_PROJECTS, 
           payload: dbProjects 
         });
         return { success: true, data: dbProjects };
