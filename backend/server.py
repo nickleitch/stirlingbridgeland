@@ -177,6 +177,7 @@ async def query_sanbi_bgis(latitude: float, longitude: float, service_name: str,
     """Query SANBI BGIS API for environmental and topographic data"""
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
+            # Use the service configuration from SANBI_SERVICES
             service_config = SANBI_SERVICES.get(service_name)
             if not service_config:
                 print(f"Unknown SANBI service: {service_name}")
@@ -186,8 +187,8 @@ async def query_sanbi_bgis(latitude: float, longitude: float, service_name: str,
             url = f"{service_config['url']}/identify"
             
             # For contours, use larger tolerance and search area to get multiple contour lines
-            tolerance = 1000 if "contour" in service_name else 50
-            map_extent_size = 0.05 if "contour" in service_name else 0.02
+            tolerance = 1000 if layer_id in [6, 7] else 50  # Check layer IDs directly for contours
+            map_extent_size = 0.05 if layer_id in [6, 7] else 0.02
             
             params = {
                 "geometry": json.dumps({"x": longitude, "y": latitude}),
