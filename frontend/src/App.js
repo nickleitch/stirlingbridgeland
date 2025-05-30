@@ -284,7 +284,15 @@ function App() {
       
     } catch (error) {
       console.error('❌ Error creating project:', error);
-      alert('Error creating project. Please check your coordinates and try again.');
+      
+      // More specific error messages
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        alert('Error connecting to server. Please check your internet connection and try again.');
+      } else if (error.message.includes('HTTP error')) {
+        alert(`Server error: ${error.message}. Please try again.`);
+      } else {
+        alert(`Error creating project: ${error.message || 'Unknown error'}. Please check your coordinates and try again.`);
+      }
     } finally {
       setLoading(false);
     }
