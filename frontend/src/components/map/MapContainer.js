@@ -25,7 +25,7 @@ const MapContainer = memo(() => {
   }
 
   return (
-    <div className="flex-1 relative">
+    <div className="flex-1 relative bg-white rounded-xl shadow-lg overflow-hidden">
       {loading && (
         <LoadingSpinner
           overlay={true}
