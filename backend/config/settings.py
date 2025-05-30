@@ -185,12 +185,13 @@ class LayerConfiguration:
         "Erven": 0.4,
         "Holdings": 0.5,
         "Public Places": 0.3,
-        "Contours": 0.2,
-        "Water Bodies": 0.8,
-        "Environmental Constraints": 0.7,
-        "Roads": 0.9,
-        "Administrative Boundaries": 0.5,
-        "Infrastructure": 0.6,
+        "Contours": 0.3,
+        "Elevation Data": 0.3,
+        "Water Bodies": 0.5,
+        "Environmental Constraints": 0.4,
+        "Roads": 0.8,
+        "Administrative Boundaries": 0.3,
+        "Infrastructure": 0.7,
         "Demographics": 0.4
     }
     
