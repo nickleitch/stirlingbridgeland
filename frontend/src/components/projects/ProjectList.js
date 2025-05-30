@@ -47,7 +47,7 @@ const ProjectList = memo(({ onProjectSelect, onCreateProject }) => {
           {/* Show progress summary for each project */}
           {projects.map(project => (
             <div key={project.id}>
-              <ProjectProgressSummary project={project} />
+              <ProjectProgressSummaryForList project={project} />
               <ProjectCard
                 project={project}
                 onSelect={onProjectSelect}
