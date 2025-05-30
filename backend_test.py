@@ -3,7 +3,7 @@
 Stirling Bridge LandDev Backend Test Suite
 
 This script tests the refactored backend service layer architecture to verify
-that all improvements are working correctly.
+that all improvements are working correctly, including the new Open Topo Data integration.
 """
 
 import httpx
@@ -18,6 +18,7 @@ import sys
 # Test configuration
 BACKEND_URL = "http://localhost:8001/api"  # Default local URL
 JOHANNESBURG_COORDS = {"latitude": -26.2041, "longitude": 28.0473}
+SOUTH_AFRICA_COORDS = {"latitude": -29.4828, "longitude": 31.205}  # South African coordinates for Open Topo Data testing
 TEST_PROJECT_NAME = "Johannesburg Test Project"
 
 # Colors for terminal output
