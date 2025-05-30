@@ -267,6 +267,9 @@ class ArcGISAPIService:
             Reverse geocoding response with address
         """
         try:
+            # Get OAuth2 token
+            token = await self.get_access_token()
+            
             async with httpx.AsyncClient(timeout=self.base_timeout) as client:
                 params = {
                     "location": f"{longitude},{latitude}",
@@ -275,8 +278,8 @@ class ArcGISAPIService:
                     "f": "json"
                 }
                 
-                if self.api_key:
-                    params["token"] = self.api_key
+                if token:
+                    params["token"] = token
                 
                 url = f"{self.base_urls['geocoding']}/reverseGeocode"
                 response = await client.get(url, params=params)
