@@ -3,6 +3,7 @@ import requests
 import sys
 import json
 import zipfile
+import time
 from datetime import datetime
 
 class StirlingBridgeAPITester:
@@ -12,6 +13,7 @@ class StirlingBridgeAPITester:
         self.tests_passed = 0
         self.project_id = None
         self.test_results = {}
+        self.mongodb_test_results = {}
 
     def run_test(self, name, method, endpoint, expected_status, data=None, params=None):
         """Run a single API test"""
