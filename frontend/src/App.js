@@ -161,8 +161,7 @@ function App() {
     setProjects(projectList);
   };
 
-  // Function to parse coordinates from various formats
-  const parseCoordinates = (coordString) => {
+  // Function to handle layer refresh
     if (!coordString || !coordString.trim()) {
       return null;
     }
