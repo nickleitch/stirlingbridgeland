@@ -467,7 +467,6 @@ function App() {
           </div>
           <div className="mt-2 text-xs text-gray-600">
             🛰️ Satellite imagery with property boundaries, topography, environment, and infrastructure data
-            {AFRIGIS_AUTH_KEY ? " including roads (AfriGIS)" : " (AfriGIS roads pending API key)"}
           </div>
         </div>
       </div>
