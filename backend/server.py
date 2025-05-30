@@ -16,6 +16,9 @@ from pymongo.errors import DuplicateKeyError
 import asyncio
 
 # Import CAD generation system
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from cad_generator import CADFileManager, SDPLayerGenerator
 
 # Database configuration
