@@ -385,25 +385,35 @@ function App() {
     
     return closestBoundary;
   };
+  // Get available boundaries for a layer type
   const getBoundariesForLayer = (layerId) => {
-    if (!result?.boundaries) return [];
+    if (!result?.boundaries || !currentProject) return [];
     
-    // Map layer IDs to boundary types
+    // First filter to only relevant boundaries for the search coordinates
+    const relevantBoundaries = getRelevantBoundaries(
+      result.boundaries, 
+      currentProject.coordinates.latitude, 
+      currentProject.coordinates.longitude
+    );
+    
+    console.log(`Filtering ${result.boundaries.length} total boundaries to ${relevantBoundaries.length} relevant boundaries`);
+    
+    // Map layer IDs to boundary types from the relevant boundaries only
     switch(layerId) {
       case 'property_boundaries':
-        return result.boundaries.filter(boundary => 
+        return relevantBoundaries.filter(boundary => 
           ['Farm Portions', 'Erven', 'Holdings', 'Public Places'].includes(boundary.layer_type)
         );
       case 'roads_existing':
-        return result.boundaries.filter(boundary => boundary.layer_type === 'Roads');
+        return relevantBoundaries.filter(boundary => boundary.layer_type === 'Roads');
       case 'topography_basic':
-        return result.boundaries.filter(boundary => boundary.layer_type === 'Contours');
+        return relevantBoundaries.filter(boundary => boundary.layer_type === 'Contours');
       case 'contours_major':
-        return result.boundaries.filter(boundary => boundary.layer_type === 'Contours');
+        return relevantBoundaries.filter(boundary => boundary.layer_type === 'Contours');
       case 'water_bodies':
-        return result.boundaries.filter(boundary => boundary.layer_type === 'Water Bodies');
+        return relevantBoundaries.filter(boundary => boundary.layer_type === 'Water Bodies');
       case 'environmental_constraints':
-        return result.boundaries.filter(boundary => boundary.layer_type === 'Environmental Constraints');
+        return relevantBoundaries.filter(boundary => boundary.layer_type === 'Environmental Constraints');
       default:
         // For other layers, find by matching type in layer definitions
         const layer = Object.values(LAYER_SECTIONS).find(section => 
@@ -411,7 +421,7 @@ function App() {
         )?.layers.find(l => l.id === layerId);
         
         if (layer) {
-          return result.boundaries.filter(boundary => boundary.layer_type === layer.type);
+          return relevantBoundaries.filter(boundary => boundary.layer_type === layer.type);
         }
         return [];
     }
