@@ -494,10 +494,23 @@ function App() {
 
   // Convert geometry to Leaflet format
   const convertGeometryToLeaflet = (geometry) => {
-    if (!geometry || !geometry.rings) return [];
-    return geometry.rings.map(ring => 
-      ring.map(coord => [coord[1], coord[0]])
-    );
+    if (!geometry) return [];
+    
+    // Handle polygons (rings)
+    if (geometry.rings) {
+      return geometry.rings.map(ring => 
+        ring.map(coord => [coord[1], coord[0]])
+      );
+    }
+    
+    // Handle polylines (paths) - for contours, roads, etc.
+    if (geometry.paths) {
+      return geometry.paths.map(path => 
+        path.map(coord => [coord[1], coord[0]])
+      );
+    }
+    
+    return [];
   };
 
   // Get map bounds
