@@ -1,47 +1,70 @@
 import React, { memo } from 'react';
 
-const StirlingBridgeLogo = memo(({ size = 'large' }) => {
+const LandstreamLogo = memo(({ size = 'large' }) => {
   const isLarge = size === 'large';
   
   return (
-    <div className="flex flex-col items-center">
-      <div className={isLarge ? "mb-2" : "mb-1"}>
-        <svg 
-          width={isLarge ? "120" : "60"} 
-          height={isLarge ? "24" : "12"} 
-          viewBox="0 0 120 24" 
-          fill="none" 
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path 
-            d="M10 22C10 22 30 2 60 2C90 2 110 22 110 22" 
-            stroke="#6B7280" 
-            strokeWidth="3" 
-            strokeLinecap="round" 
-            fill="none"
+    <div className="flex items-center">
+      {/* Landstream Logo SVG */}
+      <div className={isLarge ? "h-8 w-8 mr-3" : "h-6 w-6 mr-2"}>
+        <svg viewBox="0 0 100 100" className={isLarge ? "h-8 w-8" : "h-6 w-6"}>
+          <circle 
+            cx="50" 
+            cy="50" 
+            r="45" 
+            fill="none" 
+            stroke="#374151" 
+            strokeWidth="8"
+          />
+          {/* Horizontal line */}
+          <line 
+            x1="20" 
+            y1="50" 
+            x2="80" 
+            y2="50" 
+            stroke="#374151" 
+            strokeWidth="6"
+          />
+          {/* Vertical line */}
+          <line 
+            x1="50" 
+            y1="20" 
+            x2="50" 
+            y2="80" 
+            stroke="#374151" 
+            strokeWidth="6"
+          />
+          {/* Bottom extension */}
+          <line 
+            x1="50" 
+            y1="80" 
+            x2="50" 
+            y2="95" 
+            stroke="#374151" 
+            strokeWidth="6"
           />
         </svg>
       </div>
-      <div className="text-center">
-        <div className={`${isLarge ? 'text-2xl' : 'text-sm'} font-bold text-blue-600 tracking-wider`}>
-          STIRLING BRIDGE
+      <div>
+        <div className={`${isLarge ? 'text-lg' : 'text-sm'} font-bold text-gray-900 tracking-wider`}>
+          LANDSTREAM
         </div>
-        <div className={`${isLarge ? 'text-sm mt-1' : 'text-xs'} font-medium text-gray-500 tracking-widest`}>
-          DEVELOPMENTS
+        <div className={`${isLarge ? 'text-xs' : 'text-xs'} text-gray-500 -mt-1 tracking-wide`}>
+          URBAN PLANNING & DEVELOPMENT
         </div>
       </div>
     </div>
   );
 });
 
-StirlingBridgeLogo.displayName = 'StirlingBridgeLogo';
+LandstreamLogo.displayName = 'LandstreamLogo';
 
 const ProjectsHeader = memo(({ onCreateProject }) => (
   <header className="bg-white shadow-lg">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="flex justify-between items-center py-6">
         <div className="flex items-center">
-          <StirlingBridgeLogo size="large" />
+          <LandstreamLogo size="large" />
           <div className="ml-6 border-l border-gray-300 pl-6">
             <h1 className="text-xl font-bold text-gray-900">LandDev Platform</h1>
             <p className="text-sm text-gray-500">Project Management Dashboard</p>
@@ -72,11 +95,11 @@ const DashboardHeader = memo(({ currentProject, onBackToProjects }) => (
     
     <div className="flex items-center">
       <div className="mr-4">
-        <StirlingBridgeLogo size="small" />
+        <LandstreamLogo size="small" />
       </div>
       <div className="border-l border-gray-300 pl-4">
         <h1 className="text-lg font-semibold text-gray-900">{currentProject?.name}</h1>
-        <p className="text-xs text-gray-500">LandDev Platform</p>
+        <p className="text-xs text-gray-500">Urban Planning & Development</p>
       </div>
     </div>
     
@@ -93,4 +116,4 @@ const DashboardHeader = memo(({ currentProject, onBackToProjects }) => (
 
 DashboardHeader.displayName = 'DashboardHeader';
 
-export { StirlingBridgeLogo, ProjectsHeader, DashboardHeader };
+export { LandstreamLogo, ProjectsHeader, DashboardHeader };
