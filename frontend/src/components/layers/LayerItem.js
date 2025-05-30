@@ -54,12 +54,6 @@ const LayerItem = memo(({ layer }) => {
           </label>
         </div>
       </div>
-      
-      {hasData && (
-        <div className="mt-2 text-xs text-gray-600">
-          {getBoundariesForLayer(layer.id).length} features available
-        </div>
-      )}
     </div>
   );
 });
