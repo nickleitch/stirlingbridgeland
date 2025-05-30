@@ -925,7 +925,7 @@ function App() {
                   return null;
                 }
 
-                const polygonCoords = convertGeometryToLeaflet(boundary.geometry);
+                const geometryCoords = convertGeometryToLeaflet(boundary.geometry);
                 
                 // Get color from the specific layer or use the boundary type mapping
                 let color = "#000000";
@@ -938,29 +938,60 @@ function App() {
                   color = layer?.color || "#000000";
                 }
 
-                if (polygonCoords.length === 0) return null;
+                if (geometryCoords.length === 0) return null;
 
-                return (
-                  <Polygon
-                    key={`relevant-${index}`}
-                    positions={polygonCoords}
-                    pathOptions={{
-                      color: color,
-                      weight: 3, // Slightly thicker for better visibility
-                      opacity: 0.9,
-                      fillColor: color,
-                      fillOpacity: 0.3
-                    }}
-                  >
-                    <Popup>
-                      <div>
-                        <strong>{boundary.layer_name}</strong><br/>
-                        <em>Type: {boundary.layer_type}</em><br/>
-                        <small>Source: {boundary.source_api}</small><br/>
-                        <small style={{color: '#22c55e'}}>✓ Contains search coordinates</small>
-                      </div>
-                    </Popup>
-                  </Polygon>
+                // Determine if this is a polygon or polyline based on geometry and layer type
+                const isPolyline = boundary.geometry?.paths || 
+                                 boundary.layer_type === 'Contours' || 
+                                 boundary.layer_type === 'Roads';
+
+                if (isPolyline) {
+                  // Render as polyline (for contours, roads, etc.)
+                  return geometryCoords.map((path, pathIndex) => (
+                    <Polyline
+                      key={`relevant-${index}-${pathIndex}`}
+                      positions={path}
+                      pathOptions={{
+                        color: color,
+                        weight: 3,
+                        opacity: 0.9
+                      }}
+                    >
+                      <Popup>
+                        <div>
+                          <strong>{boundary.layer_name}</strong><br/>
+                          <em>Type: {boundary.layer_type}</em><br/>
+                          <small>Source: {boundary.source_api}</small><br/>
+                          <small style={{color: '#22c55e'}}>✓ Contains search coordinates</small>
+                        </div>
+                      </Popup>
+                    </Polyline>
+                  ));
+                } else {
+                  // Render as polygon (for property boundaries, etc.)
+                  return (
+                    <Polygon
+                      key={`relevant-${index}`}
+                      positions={geometryCoords}
+                      pathOptions={{
+                        color: color,
+                        weight: 3, // Slightly thicker for better visibility
+                        opacity: 0.9,
+                        fillColor: color,
+                        fillOpacity: 0.3
+                      }}
+                    >
+                      <Popup>
+                        <div>
+                          <strong>{boundary.layer_name}</strong><br/>
+                          <em>Type: {boundary.layer_type}</em><br/>
+                          <small>Source: {boundary.source_api}</small><br/>
+                          <small style={{color: '#22c55e'}}>✓ Contains search coordinates</small>
+                        </div>
+                      </Popup>
+                    </Polygon>
+                  );
+                }
                 );
               });
             })()}
