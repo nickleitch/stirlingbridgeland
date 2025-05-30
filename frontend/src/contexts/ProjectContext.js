@@ -37,13 +37,27 @@ const projectReducer = (state, action) => {
       };
     
     case PROJECT_ACTIONS.ADD_PROJECT:
-      const newProjects = [...state.projects, action.payload];
-      // Persist to localStorage
-      localStorage.setItem('stirling_projects', JSON.stringify(newProjects));
-      return {
-        ...state,
-        projects: newProjects
-      };
+      // Check if project already exists to prevent duplicates
+      const existingProject = state.projects.find(p => p.id === action.payload.id);
+      if (existingProject) {
+        // Update existing project instead of adding duplicate
+        const updatedProjects = state.projects.map(project =>
+          project.id === action.payload.id ? action.payload : project
+        );
+        localStorage.setItem('stirling_projects', JSON.stringify(updatedProjects));
+        return {
+          ...state,
+          projects: updatedProjects
+        };
+      } else {
+        // Add new project
+        const newProjects = [...state.projects, action.payload];
+        localStorage.setItem('stirling_projects', JSON.stringify(newProjects));
+        return {
+          ...state,
+          projects: newProjects
+        };
+      }
     
     case PROJECT_ACTIONS.UPDATE_PROJECT:
       const updatedProjects = state.projects.map(project =>
