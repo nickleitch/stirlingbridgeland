@@ -291,6 +291,7 @@ export const ProjectProvider = ({ children }) => {
     createProject,
     loadProjectData,
     updateProject,
+    deleteProject,
     setCurrentProject,
     clearError
   };
