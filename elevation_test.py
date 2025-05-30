@@ -44,8 +44,10 @@ def test_elevation_endpoint():
         pprint(data)
         
         # Verify elevation data is present
-        if "elevation_data" in data and data["elevation_data"].get("elevation") is not None:
+        if "elevation_data" in data and "elevation_stats" in data["elevation_data"]:
             print("✅ Elevation data is present")
+            print("Elevation Stats:")
+            pprint(data["elevation_data"]["elevation_stats"])
             return True
         else:
             print("❌ Elevation data is missing")
