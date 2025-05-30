@@ -14,14 +14,14 @@ import zipfile
 import io
 
 # Import service layers
-from services.external_api_service import ExternalAPIManager
-from services.database_service import db_service
-from services.validation_service import (
+from .services.external_api_service import ExternalAPIManager
+from .services.database_service import db_service
+from .services.validation_service import (
     CoordinateInput, LandDataResponse, ProjectResponse, ProjectListResponse,
     HealthCheckResponse, ErrorResponse, ValidationUtils, ProjectStatus,
     BoundaryLayer, ProjectInDB
 )
-from config.settings import settings, LayerConfiguration
+from .config.settings import settings, LayerConfiguration
 from cad_generator import CADFileManager
 from arcgis_service import ArcGISAPIService
 
