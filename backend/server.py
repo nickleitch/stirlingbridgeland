@@ -104,6 +104,64 @@ async def query_csg_api(latitude: float, longitude: float, layer_id: int):
         print(f"Error querying CSG API for layer {layer_id}: {str(e)}")
         return {"results": []}
 
+async def query_sanbi_bgis(latitude: float, longitude: float, service_name: str, layer_id: int):
+    """Query SANBI BGIS API for environmental and topographic data"""
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            service_config = SANBI_SERVICES.get(service_name)
+            if not service_config:
+                print(f"Unknown SANBI service: {service_name}")
+                return {"results": []}
+            
+            # Use identify endpoint to find features at the given coordinates
+            url = f"{service_config['url']}/identify"
+            params = {
+                "geometry": json.dumps({"x": longitude, "y": latitude}),
+                "geometryType": "esriGeometryPoint",
+                "layers": f"visible:{layer_id}",
+                "tolerance": 50,  # Larger tolerance for environmental features
+                "mapExtent": f"{longitude-0.02},{latitude-0.02},{longitude+0.02},{latitude+0.02}",
+                "imageDisplay": "400,400,96",
+                "returnGeometry": "true",
+                "f": "json"
+            }
+            
+            response = await client.get(url, params=params)
+            response.raise_for_status()
+            return response.json()
+    except Exception as e:
+        print(f"Error querying SANBI BGIS for {service_name}, layer {layer_id}: {str(e)}")
+        return {"results": []}
+
+async def query_afrigis_wfs(latitude: float, longitude: float, layer_name: str):
+    """Query AfriGIS WFS for roads and infrastructure data (placeholder for when API key is available)"""
+    if not AFRIGIS_AUTH_KEY:
+        print("AfriGIS API key not available - skipping AfriGIS data")
+        return {"features": []}
+    
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            # Create a bounding box around the coordinates
+            bbox = f"{longitude-0.01},{latitude-0.01},{longitude+0.01},{latitude+0.01}"
+            
+            url = f"{AFRIGIS_BASE_URL}/wfs"
+            params = {
+                "authkey": AFRIGIS_AUTH_KEY,
+                "service": "WFS",
+                "version": "1.1.0",
+                "request": "GetFeature",
+                "typeName": layer_name,
+                "bbox": bbox,
+                "outputFormat": "application/json"
+            }
+            
+            response = await client.get(url, params=params)
+            response.raise_for_status()
+            return response.json()
+    except Exception as e:
+        print(f"Error querying AfriGIS WFS for {layer_name}: {str(e)}")
+        return {"features": []}
+
 async def query_additional_boundaries(latitude: float, longitude: float):
     """Query additional boundary sources (placeholder for expansion)"""
     # This is where we'll add queries to other South African boundary APIs
