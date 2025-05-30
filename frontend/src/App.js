@@ -212,36 +212,81 @@ function App() {
   };
 
   const handleCreateProject = async () => {
-    if (!newProjectForm.name || !newProjectForm.latitude || !newProjectForm.longitude) {
-      setError('Please fill in all fields');
+    // Validate project name
+    if (!newProjectForm.name.trim()) {
+      alert('Please enter a project name');
       return;
     }
-
-    const newProject = {
-      id: Date.now().toString(),
-      name: newProjectForm.name,
-      coordinates: { 
-        latitude: parseFloat(newProjectForm.latitude), 
-        longitude: parseFloat(newProjectForm.longitude) 
-      },
-      created: new Date().toISOString(),
-      lastModified: new Date().toISOString(),
-      layers: {},
-      data: null
-    };
-
-    const updatedProjects = [...projects, newProject];
-    saveProjects(updatedProjects);
-    setShowCreateModal(false);
-    setError(''); // Clear any errors
-    setNewProjectForm({ name: '', latitude: '', longitude: '' }); // Reset form
     
-    // Debug logging
-    console.log('Created new project:', newProject);
-    console.log('Updated projects list:', updatedProjects);
-    console.log('Saved to localStorage:', localStorage.getItem('stirling_projects'));
+    // Parse and validate coordinates
+    const coordinates = parseCoordinates(newProjectForm.coordinates);
+    if (!coordinates) {
+      alert('Please enter valid coordinates in format: "latitude, longitude" (e.g., "-26.2041, 28.0473")');
+      return;
+    }
     
-    openProject(newProject);
+    const { latitude, longitude } = coordinates;
+    
+    // Validate South African coordinates (rough bounds)
+    if (latitude < -35 || latitude > -22 || longitude < 16 || longitude > 33) {
+      if (!window.confirm('These coordinates appear to be outside South Africa. Continue anyway?')) {
+        return;
+      }
+    }
+    
+    setLoading(true);
+    
+    try {
+      console.log(`🚀 Creating project: ${newProjectForm.name.trim()} at ${latitude}, ${longitude}`);
+      
+      const response = await fetch(`${import.meta.env.REACT_APP_BACKEND_URL}/api/identify-land`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: newProjectForm.name.trim(),
+          latitude: latitude,
+          longitude: longitude
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      console.log('✅ Project created successfully:', result);
+      
+      const newProj = {
+        id: result.project_id,
+        name: newProjectForm.name.trim(),
+        coordinates: { latitude, longitude },
+        created: new Date().toISOString(),
+        lastModified: new Date().toISOString(),
+        layers: {},
+        data: result.data ? result.data.boundaries : null
+      };
+      
+      // Add to projects list
+      const updatedProjects = [...projects, newProj];
+      setProjects(updatedProjects);
+      localStorage.setItem('stirling_projects', JSON.stringify(updatedProjects));
+      
+      // Set as current project and switch to dashboard
+      setCurrentProject(newProj);
+      setCurrentView('dashboard');
+      setShowCreateModal(false);
+      
+      // Reset form
+      setNewProjectForm({ name: '', coordinates: '' });
+      
+    } catch (error) {
+      console.error('❌ Error creating project:', error);
+      alert('Error creating project. Please check your coordinates and try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const openProject = async (project) => {
