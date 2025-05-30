@@ -83,7 +83,7 @@ const ProjectsHeader = memo(({ onCreateProject }) => (
 
 ProjectsHeader.displayName = 'ProjectsHeader';
 
-const DashboardHeader = memo(({ currentProject, onBackToProjects }) => (
+const DashboardHeader = memo(({ currentProject, onBackToProjects, onDeleteProject }) => (
   <nav className="bg-white shadow-sm border-b h-20 flex items-center px-4">
     <button
       onClick={onBackToProjects}
@@ -104,11 +104,25 @@ const DashboardHeader = memo(({ currentProject, onBackToProjects }) => (
     </div>
     
     <div className="ml-auto flex items-center space-x-4">
-      <div className="border-l border-gray-300 pl-4">
+      <div className="border-l border-gray-300 pl-4 mr-4">
         <span className="text-sm text-gray-600" title="Project Coordinates">
           📍 {currentProject?.coordinates.latitude.toFixed(4)}, {currentProject?.coordinates.longitude.toFixed(4)}
         </span>
         <div className="text-sm text-gray-500">Phase1BoundariesPresent</div>
+      </div>
+      
+      {/* Project Actions */}
+      <div className="flex items-center space-x-2">
+        <button
+          onClick={onDeleteProject}
+          className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+          aria-label="Delete Project"
+          title="Delete Project"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </button>
       </div>
     </div>
   </nav>
