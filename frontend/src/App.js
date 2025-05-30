@@ -104,8 +104,16 @@ function App() {
   // Initialize projects from localStorage
   useEffect(() => {
     const savedProjects = localStorage.getItem('stirling_projects');
+    console.log('Loading projects from localStorage:', savedProjects);
     if (savedProjects) {
-      setProjects(JSON.parse(savedProjects));
+      try {
+        const parsedProjects = JSON.parse(savedProjects);
+        console.log('Parsed projects:', parsedProjects);
+        setProjects(parsedProjects);
+      } catch (error) {
+        console.error('Error parsing saved projects:', error);
+        localStorage.removeItem('stirling_projects');
+      }
     }
   }, []);
 
