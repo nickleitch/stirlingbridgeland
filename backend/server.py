@@ -230,7 +230,7 @@ async def query_additional_boundaries(latitude: float, longitude: float):
         # Try National Protected Areas if Gauteng didn't find any
         if not protected_areas_found:
             try:
-                national_protected_data = await query_sanbi_bgis(latitude, longitude, "conservation_national", 0)
+                national_protected_data = await query_sanbi_bgis(latitude, longitude, "conservation_national", 6)
                 if national_protected_data.get("results"):
                     for result in national_protected_data["results"]:
                         if result.get("geometry") and result.get("attributes"):
