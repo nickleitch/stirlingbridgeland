@@ -202,19 +202,51 @@ async def query_additional_boundaries(latitude: float, longitude: float):
                     )
                     additional_boundaries.append(boundary)
         
-        # Query protected areas
-        protected_data = await query_sanbi_bgis(latitude, longitude, "conservation", 0)
-        if protected_data.get("results"):
-            for result in protected_data["results"]:
-                if result.get("geometry") and result.get("attributes"):
-                    boundary = BoundaryLayer(
-                        layer_name=f"Protected_Area_{result['attributes'].get('OBJECTID', 'unknown')}",
-                        layer_type="Environmental Constraints",
-                        geometry=result["geometry"],
-                        properties=result["attributes"],
-                        source_api="SANBI_BGIS"
-                    )
-                    additional_boundaries.append(boundary)
+        # Query protected areas from multiple sources
+        protected_areas_found = False
+        
+        # Try Gauteng Conservation Plan
+        try:
+            gauteng_protected_data = await query_sanbi_bgis(latitude, longitude, "conservation_gauteng", 0)
+            if gauteng_protected_data.get("results"):
+                for result in gauteng_protected_data["results"]:
+                    if result.get("geometry") and result.get("attributes"):
+                        # Determine protection level or type
+                        attrs = result["attributes"]
+                        protection_type = attrs.get("CBA_ESA", attrs.get("CBACat", "Conservation Area"))
+                        
+                        boundary = BoundaryLayer(
+                            layer_name=f"Conservation_{protection_type}_{result['attributes'].get('OBJECTID', 'unknown')}",
+                            layer_type="Environmental Constraints",
+                            geometry=result["geometry"],
+                            properties=result["attributes"],
+                            source_api="SANBI_BGIS_Gauteng"
+                        )
+                        additional_boundaries.append(boundary)
+                        protected_areas_found = True
+        except Exception as e:
+            print(f"Error querying Gauteng conservation areas: {str(e)}")
+        
+        # Try National Protected Areas if Gauteng didn't find any
+        if not protected_areas_found:
+            try:
+                national_protected_data = await query_sanbi_bgis(latitude, longitude, "conservation_national", 0)
+                if national_protected_data.get("results"):
+                    for result in national_protected_data["results"]:
+                        if result.get("geometry") and result.get("attributes"):
+                            attrs = result["attributes"]
+                            area_name = attrs.get("NAME", attrs.get("AREA_NAME", "Protected Area"))
+                            
+                            boundary = BoundaryLayer(
+                                layer_name=f"Protected_Area_{area_name}_{result['attributes'].get('OBJECTID', 'unknown')}",
+                                layer_type="Environmental Constraints",
+                                geometry=result["geometry"],
+                                properties=result["attributes"],
+                                source_api="SANBI_BGIS_National"
+                            )
+                            additional_boundaries.append(boundary)
+            except Exception as e:
+                print(f"Error querying national protected areas: {str(e)}")
     
     except Exception as e:
         print(f"Error querying SANBI BGIS: {str(e)}")
