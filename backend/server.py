@@ -731,6 +731,111 @@ async def debug_sanbi_services():
         "full_config": SANBI_SERVICES
     }
 
+@app.get("/api/download-cad/{project_id}")
+async def download_project_cad_files(project_id: str):
+    """Download professional CAD layers as ZIP package"""
+    project_doc = await database[PROJECTS_COLLECTION].find_one({"project_id": project_id})
+    if not project_doc:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    project_data = ProjectInDB(**project_doc)
+    
+    # Get the stored response data
+    response_data = project_data.data.get("response", {})
+    boundaries = response_data.get("boundaries", [])
+    
+    if not boundaries:
+        raise HTTPException(status_code=404, detail="No project data found")
+    
+    try:
+        # Initialize CAD file manager
+        cad_manager = CADFileManager()
+        
+        # Generate CAD layers
+        cad_files = await cad_manager.generate_project_cad_layers(
+            project_id, 
+            project_data.name, 
+            boundaries
+        )
+        
+        if not cad_files:
+            raise HTTPException(status_code=404, detail="No CAD layers could be generated")
+        
+        # Create CAD package ZIP
+        cad_zip_bytes = cad_manager.create_cad_package_zip(cad_files, project_data.name)
+        
+        # Create filename
+        safe_project_name = project_data.name.replace(' ', '_').replace('/', '_')
+        filename = f"stirling_bridge_CAD_{safe_project_name}_{project_id[:8]}.zip"
+        
+        # Return the CAD ZIP file
+        return StreamingResponse(
+            io.BytesIO(cad_zip_bytes),
+            media_type="application/zip",
+            headers={"Content-Disposition": f"attachment; filename=\"{filename}\""}
+        )
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating CAD files: {str(e)}")
+
+@app.get("/api/cad-layers/{project_id}")
+async def get_available_cad_layers(project_id: str):
+    """Get information about available CAD layers for a project"""
+    project_doc = await database[PROJECTS_COLLECTION].find_one({"project_id": project_id})
+    if not project_doc:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    project_data = ProjectInDB(**project_doc)
+    response_data = project_data.data.get("response", {})
+    boundaries = response_data.get("boundaries", [])
+    
+    if not boundaries:
+        return {"available_layers": [], "total_boundaries": 0}
+    
+    # Analyze available data for CAD generation
+    contour_count = len([b for b in boundaries if b.get('layer_type') == 'Contours'])
+    property_boundary_count = len([b for b in boundaries if b.get('layer_type') == 'Property Boundaries'])
+    
+    available_layers = []
+    
+    if contour_count > 0:
+        available_layers.append({
+            "layer_type": "contours",
+            "layer_name": "SDP_GEO_CONT_MAJ_001",
+            "description": "Major Contours - Topographic elevation lines",
+            "entity_count": contour_count,
+            "geometry_type": "POLYLINE",
+            "color": "Cyan"
+        })
+    
+    if property_boundary_count > 0:
+        available_layers.extend([
+            {
+                "layer_type": "property_boundaries_draft",
+                "layer_name": "SDP_DRAFT_PROP_BOUND_001",
+                "description": "Property Boundaries - Draft site boundaries",
+                "entity_count": property_boundary_count,
+                "geometry_type": "POLYLINE", 
+                "color": "Red"
+            },
+            {
+                "layer_type": "property_boundaries_geo",
+                "layer_name": "SDP_GEO_PROP_BOUND_001",
+                "description": "Property Boundaries - Surveyed geospatial boundaries",
+                "entity_count": property_boundary_count,
+                "geometry_type": "POLYLINE",
+                "color": "Green"
+            }
+        ])
+    
+    return {
+        "project_id": project_id,
+        "project_name": project_data.name,
+        "available_layers": available_layers,
+        "total_boundaries": len(boundaries),
+        "cad_generation_ready": len(available_layers) > 0
+    }
+
 @app.get("/api/boundary-types")
 async def get_available_boundary_types():
     """Get list of available boundary types that can be queried"""
