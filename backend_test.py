@@ -736,23 +736,64 @@ def main():
     # Test boundary types
     tester.test_boundary_types()
     
-    # Test identify land with various coordinates
+    # Test identify land with the specific coordinates from the requirements
     test_coordinates = [
-        # Johannesburg (urban farms) - as specified in the test requirements
-        (-26.2041, 28.0473, "Johannesburg Test"),
-        # Free State (agricultural) - as specified in the test requirements
-        (-25.5000, 28.1000, "Free State Agricultural Test"),
-        # Cape Town (mixed development) - as specified in the test requirements
-        (-33.9249, 18.4241, "Cape Town Test"),
-        # Pretoria
-        (-25.7479, 28.2293, "Pretoria Test"),
-        # Ocean coordinates (should return no boundaries)
-        (-30.0000, 0.0000, "Ocean Coordinates Test")
+        # Test 1: Johannesburg Urban
+        (-26.2041, 28.0473, "Johannesburg Urban Test"),
+        
+        # Test 2: Table Mountain National Park
+        (-33.9590, 18.4094, "Table Mountain National Park Test"),
+        
+        # Test 3: Kruger National Park area
+        (-24.9947, 31.5914, "Kruger National Park Test"),
+        
+        # Test 4: iSimangaliso Wetland Park
+        (-27.8648, 32.5472, "iSimangaliso Wetland Park Test"),
+        
+        # Test 5: Gauteng Nature Reserves (Suikerbosrand)
+        (-26.4969, 28.2292, "Gauteng Suikerbosrand Nature Reserve Test")
     ]
     
     # Test valid coordinates
+    environmental_constraints_results = {}
     for lat, lng, name in test_coordinates:
+        print(f"\n\n{'='*80}")
+        print(f"TESTING LOCATION: {name} at {lat}, {lng}")
+        print(f"{'='*80}")
+        
         success, response = tester.test_identify_land(lat, lng, name)
+        
+        # Check specifically for Environmental Constraints
+        env_constraints = []
+        if success and response.get('boundaries'):
+            for boundary in response.get('boundaries', []):
+                if boundary.get('layer_type') == 'Environmental Constraints':
+                    env_constraints.append({
+                        'name': boundary.get('layer_name'),
+                        'source': boundary.get('source_api'),
+                        'properties': boundary.get('properties')
+                    })
+        
+        environmental_constraints_results[name] = {
+            'coordinates': (lat, lng),
+            'success': success,
+            'env_constraints_found': len(env_constraints) > 0,
+            'env_constraints_count': len(env_constraints),
+            'env_constraints': env_constraints
+        }
+        
+        print(f"\n🌳 Environmental Constraints Check for {name}:")
+        if env_constraints:
+            print(f"  ✅ Found {len(env_constraints)} Environmental Constraint features")
+            for i, constraint in enumerate(env_constraints):
+                print(f"  {i+1}. {constraint['name']} (Source: {constraint['source']})")
+                # Print a few key properties if available
+                if constraint['properties']:
+                    props = constraint['properties']
+                    for key in list(props.keys())[:5]:  # Show first 5 properties
+                        print(f"     - {key}: {props[key]}")
+        else:
+            print(f"  ❌ No Environmental Constraint features found")
         
         # If we have a project ID, test the project retrieval and download files
         if success and tester.project_id:
@@ -764,6 +805,15 @@ def main():
     
     # Generate summary
     summary = tester.generate_summary()
+    
+    # Print Environmental Constraints summary
+    print("\n\n" + "="*80)
+    print("ENVIRONMENTAL CONSTRAINTS SUMMARY")
+    print("="*80)
+    
+    for name, result in environmental_constraints_results.items():
+        status = "✅ FOUND" if result['env_constraints_found'] else "❌ NOT FOUND"
+        print(f"{name} ({result['coordinates'][0]}, {result['coordinates'][1]}): {status} - {result['env_constraints_count']} constraints")
     
     # Print results
     print(f"\n📊 Tests passed: {tester.tests_passed}/{tester.tests_run}")
