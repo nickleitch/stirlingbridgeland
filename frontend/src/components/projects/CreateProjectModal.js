@@ -49,26 +49,33 @@ const CreateProjectModal = memo(({ isOpen, onClose, onProjectCreated }) => {
   };
 
   const handleSubmit = async () => {
+    if (isSubmitting || loading) return; // Prevent double submission
     if (!validateForm()) return;
 
-    const projectData = {
-      name: formData.name.trim(),
-      latitude: parseFloat(formData.latitude),
-      longitude: parseFloat(formData.longitude)
-    };
-
-    const result = await createProject(projectData);
+    setIsSubmitting(true);
     
-    if (result.success) {
-      // Reset form
-      setFormData({ name: '', latitude: '', longitude: '' });
-      setValidationError('');
+    try {
+      const projectData = {
+        name: formData.name.trim(),
+        latitude: parseFloat(formData.latitude),
+        longitude: parseFloat(formData.longitude)
+      };
+
+      const result = await createProject(projectData);
       
-      // Notify parent and close modal
-      if (onProjectCreated) {
-        onProjectCreated(result.project);
+      if (result.success) {
+        // Reset form
+        setFormData({ name: '', latitude: '', longitude: '' });
+        setValidationError('');
+        
+        // Notify parent and close modal
+        if (onProjectCreated) {
+          onProjectCreated(result.project);
+        }
+        onClose();
       }
-      onClose();
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
