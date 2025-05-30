@@ -250,6 +250,27 @@ export const ProjectProvider = ({ children }) => {
     dispatch({ type: PROJECT_ACTIONS.UPDATE_PROJECT, payload: projectData });
   };
 
+  const deleteProject = async (projectId) => {
+    try {
+      dispatch({ type: PROJECT_ACTIONS.SET_LOADING, payload: true });
+      dispatch({ type: PROJECT_ACTIONS.CLEAR_ERROR });
+
+      const response = await projectAPI.deleteProject(projectId);
+      
+      if (response.success) {
+        dispatch({ type: PROJECT_ACTIONS.DELETE_PROJECT, payload: projectId });
+        return { success: true };
+      } else {
+        throw new Error(response.error || 'Failed to delete project');
+      }
+    } catch (error) {
+      dispatch({ type: PROJECT_ACTIONS.SET_ERROR, payload: error.message });
+      return { success: false, error: error.message };
+    } finally {
+      dispatch({ type: PROJECT_ACTIONS.SET_LOADING, payload: false });
+    }
+  };
+
   const setCurrentProject = (project) => {
     dispatch({ type: PROJECT_ACTIONS.SET_CURRENT_PROJECT, payload: project });
   };
