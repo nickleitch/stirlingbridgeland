@@ -9,7 +9,7 @@ import httpx
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 from pydantic import BaseModel
-from ..config.settings import settings
+from config.settings import settings
 from .validation_service import APIStatus, APIConfiguration, APIConfigurationUpdate, APIStatusResponse
 
 class APIManagementService:
