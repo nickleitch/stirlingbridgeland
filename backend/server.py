@@ -385,6 +385,41 @@ async def query_additional_boundaries(latitude: float, longitude: float):
     
     except Exception as e:
         print(f"Error querying SANBI BGIS: {str(e)}")
+
+    # Query ArcGIS services for global context data
+    try:
+        print(f"🌍 Querying ArcGIS services for global context at {latitude}, {longitude}")
+        
+        # Get comprehensive land development data from ArcGIS
+        arcgis_data = await arcgis_service.get_land_development_data(
+            latitude, longitude, 
+            # Select most relevant services for land development
+            services=['world_countries', 'world_admin_divisions', 'world_urban_areas', 'world_cities']
+        )
+        
+        if arcgis_data.get("features"):
+            print(f"✅ Found {len(arcgis_data['features'])} ArcGIS features")
+            
+            for feature in arcgis_data["features"]:
+                # Convert ArcGIS feature to BoundaryLayer format
+                boundary = BoundaryLayer(
+                    layer_name=feature.get("layer_name"),
+                    layer_type=feature.get("layer_type"),
+                    geometry=feature.get("geometry"),
+                    properties=feature.get("properties", {}),
+                    source_api=feature.get("source_api", "ArcGIS_Online")
+                )
+                additional_boundaries.append(boundary)
+        
+        if arcgis_data.get("errors"):
+            print(f"⚠️ ArcGIS query errors: {len(arcgis_data['errors'])}")
+            for error in arcgis_data["errors"]:
+                print(f"   - {error['service']}: {error['error']}")
+
+    except Exception as e:
+        print(f"⚠️ Error querying ArcGIS services: {str(e)}")
+        # Don't fail the entire request if ArcGIS is unavailable
+        pass
     
     # Query AfriGIS for roads (if API key is available)
     try:
