@@ -24,8 +24,19 @@ const ProjectList = memo(({ onProjectSelect, onCreateProject }) => {
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Projects</h2>
-        <p className="text-gray-600">Manage your land development projects</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Projects</h2>
+            <p className="text-gray-600">
+              Manage your land development projects
+              {projects.length > 0 && (
+                <span className="ml-2 text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                  {projects.length} project{projects.length !== 1 ? 's' : ''}
+                </span>
+              )}
+            </p>
+          </div>
+        </div>
       </div>
 
       {projects.length === 0 ? (
