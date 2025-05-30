@@ -20,6 +20,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from cad_generator import CADFileManager, SDPLayerGenerator
+from arcgis_service import ArcGISAPIService
 
 # Database configuration
 MONGO_URL = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
