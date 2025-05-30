@@ -346,9 +346,8 @@ class ArcGISAPIService:
         basemap = self.basemap_services[basemap_key]
         tile_url = basemap["tile_url"].format(z=z, y=y, x=x)
         
-        if self.api_key:
-            tile_url += f"?token={self.api_key}"
-        
+        # Note: For tile URLs, we would need to get token synchronously
+        # For now, return URL without token - most basemap tiles work without auth
         return tile_url
     
     def get_available_services(self) -> Dict[str, Any]:
