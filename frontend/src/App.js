@@ -99,7 +99,6 @@ function App() {
     latitude: '',
     longitude: ''
   });
-  const [refreshing, setRefreshing] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const mapRef = useRef();
