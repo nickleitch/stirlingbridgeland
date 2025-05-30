@@ -109,11 +109,17 @@ export const ProjectProvider = ({ children }) => {
       dispatch({ type: PROJECT_ACTIONS.SET_LOADING, payload: true });
       
       // First load from localStorage for immediate display
+      let localProjects = [];
       const savedProjects = localStorage.getItem('stirling_projects');
       if (savedProjects) {
         try {
           const parsedProjects = JSON.parse(savedProjects);
-          dispatch({ type: PROJECT_ACTIONS.SET_PROJECTS, payload: parsedProjects });
+          localProjects = Array.isArray(parsedProjects) ? parsedProjects : [];
+          // Remove duplicates by ID
+          localProjects = localProjects.filter((project, index, self) => 
+            index === self.findIndex(p => p.id === project.id)
+          );
+          dispatch({ type: PROJECT_ACTIONS.SET_PROJECTS, payload: localProjects });
         } catch (error) {
           console.error('Error parsing saved projects:', error);
           localStorage.removeItem('stirling_projects');
@@ -123,7 +129,7 @@ export const ProjectProvider = ({ children }) => {
       // Then sync with database
       try {
         const response = await projectAPI.listProjects();
-        if (response.success) {
+        if (response.success && response.data.projects) {
           const dbProjects = response.data.projects.map(project => ({
             id: project.id,
             name: project.name,
@@ -134,10 +140,26 @@ export const ProjectProvider = ({ children }) => {
             data: null
           }));
           
-          if (dbProjects.length > 0) {
-            localStorage.setItem('stirling_projects', JSON.stringify(dbProjects));
-            dispatch({ type: PROJECT_ACTIONS.SET_PROJECTS, payload: dbProjects });
-          }
+          // Merge and deduplicate local and database projects
+          const mergedProjects = [...localProjects];
+          dbProjects.forEach(dbProject => {
+            const existingIndex = mergedProjects.findIndex(p => p.id === dbProject.id);
+            if (existingIndex >= 0) {
+              // Update existing project with latest data from database
+              mergedProjects[existingIndex] = dbProject;
+            } else {
+              // Add new project from database
+              mergedProjects.push(dbProject);
+            }
+          });
+          
+          // Remove duplicates one more time and save
+          const finalProjects = mergedProjects.filter((project, index, self) => 
+            index === self.findIndex(p => p.id === project.id)
+          );
+          
+          localStorage.setItem('stirling_projects', JSON.stringify(finalProjects));
+          dispatch({ type: PROJECT_ACTIONS.SET_PROJECTS, payload: finalProjects });
         }
       } catch (error) {
         console.log('Database sync not available, using localStorage only:', error);
