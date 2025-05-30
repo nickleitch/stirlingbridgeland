@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import Optional, Dict, Any
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from .validation_service import UserProfile, UserProfileUpdate, ValidationUtils
-from .database_service import database_service
+from .database_service import db_service
 
 class UserProfileService:
     """Service for managing user profiles and settings"""
@@ -25,8 +25,10 @@ class UserProfileService:
         
         try:
             # Try to get from database first
-            db = await database_service.get_database()
-            collection = db[self.collection_name]
+            if not db_service.connected:
+                await db_service.connect()
+                
+            collection = db_service.database[self.collection_name]
             
             user_doc = await collection.find_one({"user_id": user_id})
             
@@ -70,8 +72,10 @@ class UserProfileService:
         )
         
         try:
-            db = await database_service.get_database()
-            collection = db[self.collection_name]
+            if not db_service.connected:
+                await db_service.connect()
+                
+            collection = db_service.database[self.collection_name]
             
             profile_doc = {
                 "user_id": profile.user_id,
@@ -120,8 +124,10 @@ class UserProfileService:
             return current_profile
         
         try:
-            db = await database_service.get_database()
-            collection = db[self.collection_name]
+            if not db_service.connected:
+                await db_service.connect()
+                
+            collection = db_service.database[self.collection_name]
             
             # Update in database
             await collection.update_one(
@@ -142,8 +148,10 @@ class UserProfileService:
             user_id = self.default_user_id
         
         try:
-            db = await database_service.get_database()
-            collection = db[self.collection_name]
+            if not db_service.connected:
+                await db_service.connect()
+                
+            collection = db_service.database[self.collection_name]
             
             await collection.update_one(
                 {"user_id": user_id},
@@ -159,8 +167,10 @@ class UserProfileService:
             user_id = self.default_user_id
         
         try:
-            db = await database_service.get_database()
-            projects_collection = db["projects"]
+            if not db_service.connected:
+                await db_service.connect()
+                
+            projects_collection = db_service.database["projects"]
             
             # Count user's projects
             total_projects = await projects_collection.count_documents({})
@@ -199,8 +209,10 @@ class UserProfileService:
     async def _get_last_project_date(self) -> Optional[str]:
         """Get the date of the most recent project"""
         try:
-            db = await database_service.get_database()
-            projects_collection = db["projects"]
+            if not db_service.connected:
+                await db_service.connect()
+                
+            projects_collection = db_service.database["projects"]
             
             # Get most recent project
             cursor = projects_collection.find().sort("created", -1).limit(1)
@@ -227,8 +239,10 @@ class UserProfileService:
             return False  # Cannot delete default user
         
         try:
-            db = await database_service.get_database()
-            collection = db[self.collection_name]
+            if not db_service.connected:
+                await db_service.connect()
+                
+            collection = db_service.database[self.collection_name]
             
             result = await collection.delete_one({"user_id": user_id})
             return result.deleted_count > 0
