@@ -15,6 +15,57 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.errors import DuplicateKeyError
 import asyncio
 
+# Database configuration
+MONGO_URL = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
+DATABASE_NAME = "stirling_landdev"
+PROJECTS_COLLECTION = "projects"
+
+# Global variables for database
+client: AsyncIOMotorClient = None
+database = None
+
+async def connect_to_mongo():
+    """Create database connection"""
+    global client, database
+    client = AsyncIOMotorClient(MONGO_URL)
+    database = client[DATABASE_NAME]
+    
+    # Create indexes for better performance
+    await database[PROJECTS_COLLECTION].create_index("project_id", unique=True)
+    await database[PROJECTS_COLLECTION].create_index("created")
+    print(f"✅ Connected to MongoDB: {DATABASE_NAME}")
+
+async def close_mongo_connection():
+    """Close database connection"""
+    global client
+    if client:
+        client.close()
+        print("❌ Disconnected from MongoDB")
+
+# Pydantic models for database
+class ProjectCreate(BaseModel):
+    name: str
+    latitude: float
+    longitude: float
+
+class ProjectInDB(BaseModel):
+    project_id: str
+    name: str
+    coordinates: Dict[str, float]
+    created: str
+    last_modified: str
+    data: Optional[Dict[str, Any]] = None
+    layers: Optional[Dict[str, Any]] = None
+
+class ProjectResponse(BaseModel):
+    id: str
+    name: str
+    coordinates: Dict[str, float]
+    created: str
+    lastModified: str
+    data: Optional[Dict[str, Any]] = None
+    layers: Optional[Dict[str, Any]] = None
+
 app = FastAPI(title="Stirling Bridge LandDev API")
 
 # CORS middleware
