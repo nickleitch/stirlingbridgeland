@@ -1,5 +1,4 @@
 import React, { memo } from 'react';
-import ProjectCard from './ProjectCard';
 import ProjectProgressSummaryForList from './ProjectProgressSummaryForList';
 import { useProject } from '../../contexts/ProjectContext';
 
