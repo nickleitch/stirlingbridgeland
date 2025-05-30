@@ -49,6 +49,34 @@ class SDPLayerGenerator:
                 "color": 3,  # Green
                 "geometry_type": "POLYLINE",
                 "metadata_fields": ["boundary_type", "area_sqm", "surveyor_ref", "legal_description", "accuracy_class", "title_deed_ref"]
+            },
+            "administrative_boundaries": {
+                "name": "SDP_GEO_ADMIN_BOUND_001",
+                "description": "Administrative Boundaries - Countries, provinces, municipalities",
+                "color": 5,  # Magenta
+                "geometry_type": "POLYLINE",
+                "metadata_fields": ["admin_level", "admin_name", "population", "area_sqkm", "iso_code"]
+            },
+            "urban_areas": {
+                "name": "SDP_URBAN_AREAS_001", 
+                "description": "Urban Areas - City boundaries and development zones",
+                "color": 6,  # Yellow
+                "geometry_type": "POLYLINE",
+                "metadata_fields": ["urban_name", "population", "area_sqkm", "urban_type", "development_status"]
+            },
+            "infrastructure": {
+                "name": "SDP_INFRA_CITIES_001",
+                "description": "Infrastructure - Cities, transportation corridors",
+                "color": 2,  # Blue
+                "geometry_type": "POLYLINE", 
+                "metadata_fields": ["infra_type", "infra_name", "status", "capacity", "importance"]
+            },
+            "demographics": {
+                "name": "SDP_DEMO_POP_DENS_001",
+                "description": "Demographics - Population density and development planning data",
+                "color": 8,  # Gray
+                "geometry_type": "POLYLINE",
+                "metadata_fields": ["pop_density", "demo_type", "total_population", "area_sqkm", "density_class"]
             }
         }
     
