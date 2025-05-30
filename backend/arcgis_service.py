@@ -122,18 +122,22 @@ class ArcGISAPIService:
     async def test_connection(self) -> Dict[str, Any]:
         """Test ArcGIS API connectivity and return service status"""
         try:
+            # Get OAuth2 token first
+            token = await self.get_access_token()
+            
             async with httpx.AsyncClient(timeout=self.base_timeout) as client:
                 # Test basic service info
                 info_url = f"{self.base_urls['services']}?f=json"
-                if self.api_key:
-                    info_url += f"&token={self.api_key}"
+                if token:
+                    info_url += f"&token={token}"
                 
                 response = await client.get(info_url)
                 response.raise_for_status()
                 
                 return {
                     "status": "connected",
-                    "api_key_provided": bool(self.api_key),
+                    "oauth2_configured": bool(self.client_id and self.client_secret),
+                    "token_obtained": bool(token),
                     "services_available": len(self.land_dev_services),
                     "basemaps_available": len(self.basemap_services),
                     "response_time_ms": response.elapsed.total_seconds() * 1000 if hasattr(response, 'elapsed') else 0
@@ -143,7 +147,7 @@ class ArcGISAPIService:
             return {
                 "status": "error",
                 "error": str(e),
-                "api_key_provided": bool(self.api_key)
+                "oauth2_configured": bool(self.client_id and self.client_secret)
             }
     
     async def query_features_by_geometry(self, service_key: str, latitude: float, longitude: float, 
