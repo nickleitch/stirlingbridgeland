@@ -286,6 +286,26 @@ function App() {
     }
   };
 
+  const refreshProjectData = async () => {
+    if (!currentProject) return;
+    
+    setRefreshing(true);
+    setError('');
+    
+    console.log('🔄 Refreshing project data for:', currentProject.name);
+    
+    try {
+      // Call the same load function but with refresh flag
+      await loadProjectData(currentProject);
+      console.log('✅ Project data refreshed successfully');
+    } catch (err) {
+      console.error('❌ Failed to refresh project data:', err);
+      setError(`Failed to refresh project data: ${err.message}`);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const toggleLayer = (layerId) => {
     setLayerStates(prev => ({
       ...prev,
