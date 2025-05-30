@@ -627,6 +627,25 @@ For support, contact your development team
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating download: {str(e)}")
 
+@app.get("/api/projects")
+async def list_projects():
+    """List all projects"""
+    try:
+        cursor = database[PROJECTS_COLLECTION].find({}, {"_id": 0})
+        projects = []
+        async for project_doc in cursor:
+            project_data = ProjectInDB(**project_doc)
+            projects.append(ProjectResponse(
+                id=project_data.project_id,
+                name=project_data.name,
+                coordinates=project_data.coordinates,
+                created=project_data.created,
+                lastModified=project_data.last_modified
+            ))
+        return {"projects": projects}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error listing projects: {str(e)}")
+
 @app.get("/api/project/{project_id}")
 async def get_project_data(project_id: str):
     """Retrieve project data by ID"""
