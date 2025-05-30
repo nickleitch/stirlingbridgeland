@@ -183,10 +183,17 @@ function App() {
       const data = await response.json();
       setResult(data);
       
-      // Update project with data
+      // Update project with data - fix the stale closure issue
       const updatedProject = { ...project, data, lastModified: new Date().toISOString() };
-      const updatedProjects = projects.map(p => p.id === project.id ? updatedProject : p);
-      saveProjects(updatedProjects);
+      
+      // Use functional update to get the latest projects state
+      setProjects(currentProjects => {
+        const updatedProjects = currentProjects.map(p => p.id === project.id ? updatedProject : p);
+        // Save to localStorage
+        localStorage.setItem('stirling_projects', JSON.stringify(updatedProjects));
+        return updatedProjects;
+      });
+      
       setCurrentProject(updatedProject);
 
       // Auto-enable base data layers that have data
