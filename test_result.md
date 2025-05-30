@@ -297,6 +297,9 @@ Stirling Bridge LandDev App - Complete Development Summary: Professional-grade l
         - working: false
           agent: "testing"
           comment: "The updated Project Progress Summary component has critical issues. Testing revealed that the component has not been properly unified as requested. There are still duplicate project cards showing on the page - the progress summary component and a separate blue-green project card below it. The component does have the requested arrow on the right side and the progress circles are responsive, displaying correctly on both desktop and mobile views with 6 circles as required. However, the main requirement of unifying the components into a single clickable card has not been implemented correctly. Currently, there are duplicate project entries on the page, which does not match the requested unified design."
+        - working: false
+          agent: "testing"
+          comment: "Testing the unified Project Progress Summary component reveals that there are still duplicate project cards being displayed. Each project (e.g., 'Johannesburg Test Project') appears multiple times in the list (found 13 instances of the same project). The component itself correctly includes both progress circles and project information in a unified card with a right arrow, but the duplication issue needs to be fixed. The component shows the project name, layer progress summary, boundaries information, coordinates, creation date, and 6 progress circles for different stages (Base Data, Initial Concept, etc.), all with a right arrow for navigation."
 
   - task: "Component Architecture"
     implemented: true
