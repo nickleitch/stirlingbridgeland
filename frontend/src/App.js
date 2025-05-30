@@ -492,14 +492,34 @@ function App() {
   return (
     <div className="h-screen flex flex-col bg-gray-900">
       {/* Top Navigation */}
-      <nav className="bg-white shadow-sm border-b h-16 flex items-center px-4">
+      <nav className="bg-white shadow-sm border-b h-20 flex items-center px-4">
         <button
           onClick={backToProjects}
-          className="mr-4 p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
+          className="mr-6 p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
         >
           ← Back to Projects
         </button>
-        <h1 className="text-lg font-semibold text-gray-900">{currentProject?.name}</h1>
+        
+        <div className="flex items-center">
+          <div className="flex flex-col items-center mr-4">
+            {/* Bridge arch design - smaller for dashboard */}
+            <div className="mb-1">
+              <svg width="60" height="12" viewBox="0 0 120 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10 22C10 22 30 2 60 2C90 2 110 22 110 22" stroke="#6B7280" strokeWidth="3" strokeLinecap="round" fill="none"/>
+              </svg>
+            </div>
+            {/* Company name - smaller for dashboard */}
+            <div className="text-center">
+              <div className="text-sm font-bold text-blue-600 tracking-wider">STIRLING BRIDGE</div>
+              <div className="text-xs font-medium text-gray-500 tracking-widest">DEVELOPMENTS</div>
+            </div>
+          </div>
+          <div className="border-l border-gray-300 pl-4">
+            <h1 className="text-lg font-semibold text-gray-900">{currentProject?.name}</h1>
+            <p className="text-xs text-gray-500">LandDev Platform</p>
+          </div>
+        </div>
+        
         <div className="ml-auto flex items-center space-x-4">
           <span className="text-sm text-gray-600">
             📍 {currentProject?.coordinates.latitude.toFixed(4)}, {currentProject?.coordinates.longitude.toFixed(4)}
