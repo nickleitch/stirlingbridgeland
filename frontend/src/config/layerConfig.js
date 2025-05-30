@@ -56,7 +56,12 @@ export const LAYER_SECTIONS = {
     layers: [
       { id: "major_hazard_buffers", name: "Major Hazard Installation Buffers", type: "Safety", color: "#FF4500", stage: "SDP 4" },
       { id: "fire_access", name: "Fire Access", type: "Safety", color: "#FF0000", stage: "SDP 4" },
-      { id: "disability_access", name: "Disability Access", type: "Accessibility", color: "#4169E1", stage: "SDP 4" },
+      { id: "disability_access", name: "Disability Access", type: "Accessibility", color: "#4169E1", stage: "SDP 4" }
+    ]
+  },
+  "Final SDP": {
+    color: "#7C3AED",
+    layers: [
       { id: "construction_staging", name: "Construction Staging", type: "Construction", color: "#F4A460", stage: "Final SDP" },
       { id: "landscaping_zones", name: "Landscaping Zones", type: "Landscaping", color: "#98FB98", stage: "Final SDP" },
       { id: "telecommunications", name: "Telecommunications Proposed", type: "Infrastructure", color: "#9370DB", stage: "Final SDP" },
