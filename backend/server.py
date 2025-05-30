@@ -115,7 +115,8 @@ SANBI_SERVICES = {
     "contours": {
         "url": f"{SANBI_BASE_URL}/BGIS_Projects/Basedata_rivers_contours/MapServer",
         "layers": {
-            "contours": 5,
+            "contours_north": 6,    # Proper topographic contours with HEIGHT field
+            "contours_south": 7,    # Proper topographic contours with HEIGHT field
             "rivers": 4
         }
     },
