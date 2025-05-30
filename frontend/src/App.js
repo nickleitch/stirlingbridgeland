@@ -191,7 +191,8 @@ function App() {
         
         // Auto-detect if longitude came first (common in some formats)
         // If first number is > 90 or < -90, it's likely longitude
-        if (Math.abs(lat) > 90 && Math.abs(lng) <= 90) {
+        // OR if we're in South Africa and first number is positive (longitude)
+        if (Math.abs(lat) > 90 || (lat > 0 && lng < 0 && Math.abs(lng) < 90)) {
           [lat, lng] = [lng, lat]; // Swap them
         }
         
