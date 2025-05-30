@@ -160,6 +160,51 @@ function App() {
     setProjects(projectList);
   };
 
+  // Function to parse coordinates from various formats
+  const parseCoordinates = (coordString) => {
+    if (!coordString || !coordString.trim()) {
+      return null;
+    }
+    
+    const cleanCoords = coordString.trim().replace(/[°'"]/g, ''); // Remove degree symbols
+    
+    // Try different coordinate formats
+    const formats = [
+      // Standard decimal formats
+      /^(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)$/, // "lat, lng" or "lat lng"
+      /^(-?\d+\.?\d*)[\/]+(-?\d+\.?\d*)$/, // "lat/lng"
+      
+      // With cardinal directions (basic)
+      /^S?(-?\d+\.?\d*)[,\s]+E?(-?\d+\.?\d*)$/, // "S26.2041, E28.0473"
+      /^E?(-?\d+\.?\d*)[,\s]+S?(-?\d+\.?\d*)$/, // "E28.0473, S26.2041" (lng first)
+    ];
+    
+    for (const format of formats) {
+      const match = cleanCoords.match(format);
+      if (match) {
+        let lat = parseFloat(match[1]);
+        let lng = parseFloat(match[2]);
+        
+        // Handle cardinal directions
+        if (cleanCoords.includes('S') && lat > 0) lat = -lat;
+        if (cleanCoords.includes('W') && lng > 0) lng = -lng;
+        
+        // Auto-detect if longitude came first (common in some formats)
+        // If first number is > 90 or < -90, it's likely longitude
+        if (Math.abs(lat) > 90 && Math.abs(lng) <= 90) {
+          [lat, lng] = [lng, lat]; // Swap them
+        }
+        
+        // Validate coordinate ranges
+        if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+          return { latitude: lat, longitude: lng };
+        }
+      }
+    }
+    
+    return null; // Invalid format
+  };
+
   const createNewProject = () => {
     setNewProjectForm({ name: '', latitude: '', longitude: '' });
     setShowCreateModal(true);
