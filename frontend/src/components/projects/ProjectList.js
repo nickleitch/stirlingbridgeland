@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import ProjectCard from './ProjectCard';
-import ProjectProgressSummary from '../dashboard/ProjectProgressSummary';
+import ProjectProgressSummaryForList from './ProjectProgressSummaryForList';
 import { useProject } from '../../contexts/ProjectContext';
 
 const EmptyState = memo(({ onCreateProject }) => (
