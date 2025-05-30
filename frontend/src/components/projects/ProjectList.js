@@ -43,16 +43,17 @@ const ProjectList = memo(({ onProjectSelect, onCreateProject }) => {
       {projects.length === 0 ? (
         <EmptyState onCreateProject={onCreateProject} />
       ) : (
-        <div className="max-w-4xl mx-auto">
-          <div className="space-y-4">
-            {projects.map(project => (
+        <div className="max-w-4xl mx-auto space-y-6">
+          {/* Show progress summary for each project */}
+          {projects.map(project => (
+            <div key={project.id}>
+              <ProjectProgressSummary project={project} />
               <ProjectCard
-                key={project.id}
                 project={project}
                 onSelect={onProjectSelect}
               />
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       )}
     </main>
