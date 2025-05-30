@@ -220,14 +220,17 @@ class SANBIAPIService(BaseAPIService):
             if river_response.success and river_response.data.get("results"):
                 for result in river_response.data["results"]:
                     if result.get("geometry") and result.get("attributes"):
-                        boundary = {
-                            "layer_name": f"River_{result['attributes'].get('OBJECTID', 'unknown')}",
-                            "layer_type": "Water Bodies",
-                            "geometry": result["geometry"],
-                            "properties": result["attributes"],
-                            "source_api": "SANBI_BGIS"
-                        }
-                        all_boundaries.append(boundary)
+                        # Filter out overly large water body geometries
+                        geometry = result["geometry"]
+                        if self._is_reasonable_water_body_size(geometry, latitude, longitude):
+                            boundary = {
+                                "layer_name": f"River_{result['attributes'].get('OBJECTID', 'unknown')}",
+                                "layer_type": "Water Bodies",
+                                "geometry": geometry,
+                                "properties": result["attributes"],
+                                "source_api": "SANBI_BGIS"
+                            }
+                            all_boundaries.append(boundary)
         except Exception as e:
             errors.append(f"rivers: {str(e)}")
         
