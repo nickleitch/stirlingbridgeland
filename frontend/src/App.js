@@ -466,7 +466,8 @@ function App() {
             <span className="text-sm text-gray-700">Search Location</span>
           </div>
           <div className="mt-2 text-xs text-gray-600">
-            🛰️ High-resolution satellite imagery with property boundary overlays
+            🛰️ Satellite imagery with property boundaries (CSG), topography & environment (SANBI), and infrastructure data
+            {AFRIGIS_AUTH_KEY ? " including roads (AfriGIS)" : " (AfriGIS roads pending API key)"}
           </div>
         </div>
       </div>
