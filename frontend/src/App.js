@@ -142,6 +142,14 @@ function App() {
     const updatedProjects = [...projects, newProject];
     saveProjects(updatedProjects);
     setShowCreateModal(false);
+    setError(''); // Clear any errors
+    setNewProjectForm({ name: '', latitude: '', longitude: '' }); // Reset form
+    
+    // Debug logging
+    console.log('Created new project:', newProject);
+    console.log('Updated projects list:', updatedProjects);
+    console.log('Saved to localStorage:', localStorage.getItem('stirling_projects'));
+    
     openProject(newProject);
   };
 
