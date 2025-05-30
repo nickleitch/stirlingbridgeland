@@ -429,6 +429,41 @@ async def get_statistics():
             detail="Failed to retrieve statistics"
         )
 
+@app.delete("/api/projects/{project_id}")
+async def delete_project(project_id: str):
+    """Delete a specific project by ID"""
+    try:
+        result = await db_service.delete_project(project_id)
+        
+        if result.get("success"):
+            logger.info(f"Project deleted: {project_id}")
+            return {
+                "message": f"Successfully deleted project {project_id}",
+                "project_id": project_id,
+                "success": True
+            }
+        else:
+            error_type = result.get("error_type", "unknown")
+            if error_type == "not_found":
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Project {project_id} not found"
+                )
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=result.get("error", "Failed to delete project")
+                )
+                
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting project {project_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete project: {str(e)}"
+        )
+
 @app.delete("/api/projects/delete-all")
 async def delete_all_projects():
     """Delete all projects from the database"""
