@@ -194,9 +194,37 @@ function App() {
       if (data.boundaries) {
         data.boundaries.forEach(boundary => {
           const layerType = boundary.layer_type;
-          const layerId = Object.values(LAYER_SECTIONS).find(section => 
-            section.layers.some(layer => layer.type === layerType)
-          )?.layers.find(layer => layer.type === layerType)?.id;
+          let layerId = null;
+          
+          // Map existing data types to new Base Data layer structure
+          switch(layerType) {
+            case 'Farm Portions':
+            case 'Erven':
+            case 'Holdings':
+            case 'Public Places':
+              layerId = 'property_boundaries';
+              break;
+            case 'Roads':
+              layerId = 'roads_existing';
+              break;
+            case 'Contours':
+              layerId = 'topography_basic';
+              break;
+            case 'Water Bodies':
+              layerId = 'water_bodies';
+              break;
+            case 'Environmental Constraints':
+              // Keep this in Environmental Screening section
+              layerId = Object.values(LAYER_SECTIONS).find(section => 
+                section.layers.some(layer => layer.type === layerType)
+              )?.layers.find(layer => layer.type === layerType)?.id;
+              break;
+            default:
+              // For other layer types, find in any section
+              layerId = Object.values(LAYER_SECTIONS).find(section => 
+                section.layers.some(layer => layer.type === layerType)
+              )?.layers.find(layer => layer.type === layerType)?.id;
+          }
           
           if (layerId) {
             newLayerStates[layerId] = true;
