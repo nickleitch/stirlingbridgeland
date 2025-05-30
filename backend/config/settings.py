@@ -5,7 +5,8 @@ Centralized configuration management with environment variable support and valid
 
 import os
 from typing import Optional, List
-from pydantic import BaseSettings, Field, validator
+from pydantic_settings import BaseSettings
+from pydantic import Field, validator
 import logging
 
 class Settings(BaseSettings):
