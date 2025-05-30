@@ -103,20 +103,53 @@ function App() {
   const [refreshing, setRefreshing] = useState(false);
   const mapRef = useRef();
 
-  // Initialize projects from localStorage
+  // Initialize projects from localStorage and sync with database
   useEffect(() => {
-    const savedProjects = localStorage.getItem('stirling_projects');
-    console.log('Loading projects from localStorage:', savedProjects);
-    if (savedProjects) {
-      try {
-        const parsedProjects = JSON.parse(savedProjects);
-        console.log('Parsed projects:', parsedProjects);
-        setProjects(parsedProjects);
-      } catch (error) {
-        console.error('Error parsing saved projects:', error);
-        localStorage.removeItem('stirling_projects');
+    const loadProjects = async () => {
+      // First load from localStorage for immediate display
+      const savedProjects = localStorage.getItem('stirling_projects');
+      console.log('Loading projects from localStorage:', savedProjects);
+      if (savedProjects) {
+        try {
+          const parsedProjects = JSON.parse(savedProjects);
+          console.log('Parsed projects:', parsedProjects);
+          setProjects(parsedProjects);
+        } catch (error) {
+          console.error('Error parsing saved projects:', error);
+          localStorage.removeItem('stirling_projects');
+        }
       }
-    }
+
+      // Then sync with database
+      try {
+        const response = await fetch(`${import.meta.env.REACT_APP_BACKEND_URL}/api/projects`);
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Projects from database:', data.projects);
+          
+          // Sync with localStorage - merge database projects with local projects
+          const dbProjects = data.projects.map(project => ({
+            id: project.id,
+            name: project.name,
+            coordinates: project.coordinates,
+            created: project.created,
+            lastModified: project.lastModified,
+            layers: {},
+            data: null
+          }));
+          
+          // Update localStorage with database data
+          if (dbProjects.length > 0) {
+            localStorage.setItem('stirling_projects', JSON.stringify(dbProjects));
+            setProjects(dbProjects);
+          }
+        }
+      } catch (error) {
+        console.log('Database sync not available, using localStorage only:', error);
+      }
+    };
+
+    loadProjects();
   }, []);
 
   // Save projects to localStorage
