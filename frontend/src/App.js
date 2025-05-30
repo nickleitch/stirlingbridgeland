@@ -207,7 +207,7 @@ function App() {
 
   // Function to create a new project
   const createNewProject = () => {
-    setNewProjectForm({ name: '', latitude: '', longitude: '' });
+    setNewProject({ name: '', coordinates: '' });
     setShowCreateModal(true);
   };
 
