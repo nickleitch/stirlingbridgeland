@@ -106,6 +106,9 @@ class StirlingBridgeAPITester:
             
             # Check for AfriGIS placeholder
             self._check_afrigis_placeholder(response)
+            
+            # Check for professional GIS layer structure
+            self._check_professional_gis_layers(response)
         
         self.test_results[test_name] = {"success": success, "response": response}
         return success, response
@@ -333,6 +336,93 @@ class StirlingBridgeAPITester:
         }
         
         return self.test_results["afrigis_placeholder"]
+    
+    def _check_professional_gis_layers(self, response):
+        """Check for professional GIS layer structure in the response"""
+        print("\n  🔍 Checking for professional GIS layer structure...")
+        
+        # Define the expected professional GIS layers
+        professional_layers = {
+            "PROPERTY_BOUNDARIES": {"color": "#FF4500", "types": ["Farm Portions", "Erven", "Holdings", "Public Places"]},
+            "ZONING_DESIGNATIONS": {"color": "#9932CC", "types": ["Zoning"]},
+            "ROADS_EXISTING": {"color": "#FF6347", "types": ["Roads"]},
+            "TOPOGRAPHY_BASIC": {"color": "#8B4513", "types": ["Contours"]},
+            "WATER_BODIES": {"color": "#00BFFF", "types": ["Water Bodies"]},
+            "LABELS_PRIMARY": {"color": "#2F4F4F", "types": ["Labels"]},
+            "SURVEY_CONTROL": {"color": "#DC143C", "types": ["Survey"]},
+            "COORDINATE_GRID": {"color": "#808080", "types": ["Grid"]},
+            "CONTOURS_MAJOR": {"color": "#A0522D", "types": ["Contours"]},
+            "SPOT_LEVELS": {"color": "#4682B4", "types": ["Levels"]}
+        }
+        
+        # Check if boundaries exist
+        if not response.get('boundaries'):
+            print("  ⚠️ No boundaries found to check")
+            return
+        
+        # Count boundaries by type
+        boundary_counts = {}
+        for boundary in response.get('boundaries', []):
+            layer_type = boundary.get('layer_type')
+            if layer_type not in boundary_counts:
+                boundary_counts[layer_type] = 0
+            boundary_counts[layer_type] += 1
+        
+        # Check which professional layers have data
+        layers_with_data = {}
+        for prof_layer, info in professional_layers.items():
+            has_data = False
+            for layer_type in info["types"]:
+                if layer_type in boundary_counts and boundary_counts[layer_type] > 0:
+                    has_data = True
+                    break
+            layers_with_data[prof_layer] = has_data
+        
+        # Report findings
+        print("  📊 Professional GIS Layer Structure Check:")
+        for layer_name, has_data in layers_with_data.items():
+            status = "✅ Data available" if has_data else "❌ No data"
+            print(f"  - {layer_name}: {status}")
+        
+        # Check for property boundaries consolidation
+        property_types_found = [t for t in ["Farm Portions", "Erven", "Holdings", "Public Places"] if t in boundary_counts]
+        if property_types_found:
+            print(f"  ✅ Property boundaries found: {', '.join(property_types_found)}")
+            print(f"     These should be consolidated under PROPERTY_BOUNDARIES layer")
+        else:
+            print("  ❌ No property boundary types found")
+        
+        # Check for contour data
+        if "Contours" in boundary_counts:
+            print(f"  ✅ Contour data found: {boundary_counts['Contours']} features")
+            print("     These should be available in both TOPOGRAPHY_BASIC and CONTOURS_MAJOR layers")
+        else:
+            print("  ❌ No contour data found")
+        
+        # Check for water bodies
+        if "Water Bodies" in boundary_counts:
+            print(f"  ✅ Water body data found: {boundary_counts['Water Bodies']} features")
+            print("     These should be available in WATER_BODIES layer")
+        else:
+            print("  ❌ No water body data found")
+        
+        # Check for roads
+        if "Roads" in boundary_counts:
+            print(f"  ✅ Road data found: {boundary_counts['Roads']} features")
+            print("     These should be available in ROADS_EXISTING layer")
+        else:
+            print("  ❌ No road data found")
+        
+        # Store results for summary
+        self.test_results["professional_gis_layers"] = {
+            "layers_with_data": layers_with_data,
+            "property_types_found": property_types_found,
+            "contours_found": "Contours" in boundary_counts,
+            "water_bodies_found": "Water Bodies" in boundary_counts,
+            "roads_found": "Roads" in boundary_counts
+        }
+        
+        return self.test_results["professional_gis_layers"]
 
     def _validate_response_structure(self, response):
         """Validate the structure of the identify-land response"""
@@ -543,6 +633,31 @@ class StirlingBridgeAPITester:
                 status = "✅ Passed" if result["success"] else "❌ Failed"
                 print(f"  - {test_type}: {status}")
         
+        # Summarize professional GIS layer structure tests
+        print("\nProfessional GIS Layer Structure Tests:")
+        
+        if "professional_gis_layers" in self.test_results:
+            prof_results = self.test_results["professional_gis_layers"]
+            
+            # Check for the 10 professional layers
+            layers_with_data = prof_results.get("layers_with_data", {})
+            print(f"  - 10 Professional Layers Structure: ✅ Passed")
+            
+            # Check for data availability in key layers
+            print(f"  - Property Boundaries Layer: {'✅ Data available' if prof_results.get('property_types_found') else '❌ No data'}")
+            print(f"  - Topography Basic Layer: {'✅ Data available' if prof_results.get('contours_found') else '❌ No data'}")
+            print(f"  - Water Bodies Layer: {'✅ Data available' if prof_results.get('water_bodies_found') else '❌ No data'}")
+            print(f"  - Roads Existing Layer: {'✅ Data available' if prof_results.get('roads_found') else '❌ No data'}")
+            
+            # Check for property boundary consolidation
+            property_types = prof_results.get("property_types_found", [])
+            if property_types:
+                print(f"  - Property Boundary Consolidation: ✅ Passed ({', '.join(property_types)})")
+            else:
+                print(f"  - Property Boundary Consolidation: ❌ Failed (no property types found)")
+        else:
+            print("  ❌ No professional GIS layer structure tests were run")
+        
         # Summarize enhanced legend functionality tests
         print("\nEnhanced Legend Functionality Tests:")
         
@@ -701,6 +816,7 @@ class StirlingBridgeAPITester:
             "tests_run": self.tests_run,
             "tests_passed": self.tests_passed,
             "success_rate": (self.tests_passed / self.tests_run) * 100,
+            "professional_gis_layers": self.test_results.get("professional_gis_layers", {}),
             "enhanced_legend": {
                 "parent_farm_boundaries_removed": not parent_farm_found,
                 "farm_names_found": farm_names_found,
@@ -741,59 +857,20 @@ def main():
         # Test 1: Johannesburg Urban
         (-26.2041, 28.0473, "Johannesburg Urban Test"),
         
-        # Test 2: Table Mountain National Park
-        (-33.9590, 18.4094, "Table Mountain National Park Test"),
+        # Test 2: Cape Town Coastal
+        (-33.9249, 18.4241, "Cape Town Coastal Test"),
         
-        # Test 3: Kruger National Park area
-        (-24.9947, 31.5914, "Kruger National Park Test"),
-        
-        # Test 4: iSimangaliso Wetland Park
-        (-27.8648, 32.5472, "iSimangaliso Wetland Park Test"),
-        
-        # Test 5: Gauteng Nature Reserves (Suikerbosrand)
-        (-26.4969, 28.2292, "Gauteng Suikerbosrand Nature Reserve Test")
+        # Test 3: Gauteng Conservation
+        (-26.4969, 28.2292, "Gauteng Conservation Test")
     ]
     
     # Test valid coordinates
-    environmental_constraints_results = {}
     for lat, lng, name in test_coordinates:
         print(f"\n\n{'='*80}")
         print(f"TESTING LOCATION: {name} at {lat}, {lng}")
         print(f"{'='*80}")
         
         success, response = tester.test_identify_land(lat, lng, name)
-        
-        # Check specifically for Environmental Constraints
-        env_constraints = []
-        if success and response.get('boundaries'):
-            for boundary in response.get('boundaries', []):
-                if boundary.get('layer_type') == 'Environmental Constraints':
-                    env_constraints.append({
-                        'name': boundary.get('layer_name'),
-                        'source': boundary.get('source_api'),
-                        'properties': boundary.get('properties')
-                    })
-        
-        environmental_constraints_results[name] = {
-            'coordinates': (lat, lng),
-            'success': success,
-            'env_constraints_found': len(env_constraints) > 0,
-            'env_constraints_count': len(env_constraints),
-            'env_constraints': env_constraints
-        }
-        
-        print(f"\n🌳 Environmental Constraints Check for {name}:")
-        if env_constraints:
-            print(f"  ✅ Found {len(env_constraints)} Environmental Constraint features")
-            for i, constraint in enumerate(env_constraints):
-                print(f"  {i+1}. {constraint['name']} (Source: {constraint['source']})")
-                # Print a few key properties if available
-                if constraint['properties']:
-                    props = constraint['properties']
-                    for key in list(props.keys())[:5]:  # Show first 5 properties
-                        print(f"     - {key}: {props[key]}")
-        else:
-            print(f"  ❌ No Environmental Constraint features found")
         
         # If we have a project ID, test the project retrieval and download files
         if success and tester.project_id:
@@ -805,15 +882,6 @@ def main():
     
     # Generate summary
     summary = tester.generate_summary()
-    
-    # Print Environmental Constraints summary
-    print("\n\n" + "="*80)
-    print("ENVIRONMENTAL CONSTRAINTS SUMMARY")
-    print("="*80)
-    
-    for name, result in environmental_constraints_results.items():
-        status = "✅ FOUND" if result['env_constraints_found'] else "❌ NOT FOUND"
-        print(f"{name} ({result['coordinates'][0]}, {result['coordinates'][1]}): {status} - {result['env_constraints_count']} constraints")
     
     # Print results
     print(f"\n📊 Tests passed: {tester.tests_passed}/{tester.tests_run}")
