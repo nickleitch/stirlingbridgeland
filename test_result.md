@@ -279,7 +279,7 @@ Stirling Bridge LandDev App - Complete Development Summary: Professional-grade l
 ## frontend:
   - task: "Project Progress Summary"
     implemented: true
-    working: false
+    working: true
     file: "/app/frontend/src/components/projects/ProjectProgressSummaryForList.js"
     stuck_count: 1
     priority: "high"
@@ -300,6 +300,9 @@ Stirling Bridge LandDev App - Complete Development Summary: Professional-grade l
         - working: false
           agent: "testing"
           comment: "Testing the unified Project Progress Summary component reveals that there are still duplicate project cards being displayed. Each project (e.g., 'Johannesburg Test Project') appears multiple times in the list (found 13 instances of the same project). The component itself correctly includes both progress circles and project information in a unified card with a right arrow, but the duplication issue needs to be fixed. The component shows the project name, layer progress summary, boundaries information, coordinates, creation date, and 6 progress circles for different stages (Base Data, Initial Concept, etc.), all with a right arrow for navigation."
+        - working: true
+          agent: "testing"
+          comment: "After the duplication issues were fixed in ProjectContext, the Project Progress Summary component is now working correctly. Testing confirmed that each project appears exactly once in the list (no duplicates). Each project is displayed as a unified component containing both progress circles and project information. The component shows the project name, layer progress summary, boundaries information, coordinates, creation date, and 6 progress circles for different stages (Base Data, Initial Concept, Specialist Input, Environmental Screening, Additional Design, Final SDP). Each component has a right-side arrow that is visible and clickable. The component is responsive and displays properly on desktop, tablet, and mobile views. No separate blue-green project cards were found below the progress summary, confirming that the component has been properly unified as requested."
 
   - task: "Component Architecture"
     implemented: true
