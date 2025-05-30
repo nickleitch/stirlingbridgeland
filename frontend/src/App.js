@@ -778,11 +778,13 @@ function App() {
 
         {/* Map Area */}
         <div className="flex-1 relative">
-          {loading && (
+          {(loading || refreshing) && (
             <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <div className="bg-white p-6 rounded-lg shadow-xl">
                 <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent mx-auto mb-4"></div>
-                <p className="text-gray-600">Loading project data...</p>
+                <p className="text-gray-600">
+                  {refreshing ? 'Refreshing project data...' : 'Loading project data...'}
+                </p>
               </div>
             </div>
           )}
