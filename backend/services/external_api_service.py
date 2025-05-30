@@ -395,6 +395,14 @@ class ExternalAPIManager:
         self.sanbi_service = SANBIAPIService()
         # ArcGIS service will be injected separately due to its complexity
         self.arcgis_service = None
+        # Initialize Open Topo Data service for enhanced elevation data
+        try:
+            from .open_topo_data_service import OpenTopoDataService
+            self.open_topo_service = OpenTopoDataService()
+            logger.info("Open Topo Data service initialized successfully")
+        except ImportError as e:
+            self.open_topo_service = None
+            logger.warning(f"Open Topo Data service not available: {e}")
     
     def set_arcgis_service(self, arcgis_service):
         """Inject ArcGIS service"""
