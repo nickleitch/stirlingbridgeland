@@ -945,16 +945,51 @@ function App() {
                                 <div className="text-xs text-gray-500 mt-1">{layer.stage}</div>
                               )}
                             </div>
-                            <label className="relative inline-flex items-center cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={isEnabled}
-                                onChange={() => toggleLayer(layer.id)}
-                                disabled={!hasData}
-                                className="sr-only peer"
-                              />
-                              <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600 disabled:opacity-50"></div>
-                            </label>
+                            
+                            <div className="flex items-center space-x-2">
+                              {/* Layer Controls - Refresh and CAD Download */}
+                              {hasData && (
+                                <>
+                                  <button
+                                    onClick={() => handleLayerRefresh(layer.id)}
+                                    disabled={layerRefreshing[layer.id]}
+                                    className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-all disabled:opacity-50"
+                                    title={`Refresh ${layer.name} data`}
+                                  >
+                                    {layerRefreshing[layer.id] ? (
+                                      <div className="animate-spin w-3 h-3 border border-blue-500 border-t-transparent rounded-full"></div>
+                                    ) : (
+                                      <span className="text-xs">🔄</span>
+                                    )}
+                                  </button>
+                                  
+                                  <button
+                                    onClick={() => handleLayerCADDownload(layer.id)}
+                                    disabled={layerDownloading[layer.id]}
+                                    className="p-1 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded transition-all disabled:opacity-50"
+                                    title={`Download ${layer.name} CAD file`}
+                                  >
+                                    {layerDownloading[layer.id] ? (
+                                      <div className="animate-spin w-3 h-3 border border-green-500 border-t-transparent rounded-full"></div>
+                                    ) : (
+                                      <span className="text-xs">📐</span>
+                                    )}
+                                  </button>
+                                </>
+                              )}
+                              
+                              {/* Layer Toggle Switch */}
+                              <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={isEnabled}
+                                  onChange={() => toggleLayer(layer.id)}
+                                  disabled={!hasData}
+                                  className="sr-only peer"
+                                />
+                                <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600 disabled:opacity-50"></div>
+                              </label>
+                            </div>
                           </div>
                           {hasData && (
                             <div className="mt-2 text-xs text-gray-600">
