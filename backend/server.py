@@ -539,8 +539,8 @@ async def identify_land(coordinate_input: CoordinateInput):
         raise HTTPException(status_code=500, detail=f"Error processing land identification: {str(e)}")
 
 @app.get("/api/download-files/{project_id}")
-async def download_files(project_id: str):
-    """Generate and download a ZIP file containing all project data"""
+async def download_project_files(project_id: str):
+    """Download project files as ZIP package"""
     try:
         # Get project from MongoDB
         project_doc = await database[PROJECTS_COLLECTION].find_one({"project_id": project_id})
