@@ -220,14 +220,25 @@ function App() {
       return;
     }
     
-    // Parse and validate coordinates
-    const coordinates = parseCoordinates(newProjectForm.coordinates);
-    if (!coordinates) {
-      alert('Please enter valid coordinates in format: "latitude, longitude" (e.g., "-26.2041, 28.0473")');
+    // Validate coordinates
+    const latitude = parseFloat(newProjectForm.latitude);
+    const longitude = parseFloat(newProjectForm.longitude);
+    
+    if (!newProjectForm.latitude || !newProjectForm.longitude) {
+      alert('Please enter both latitude and longitude');
       return;
     }
     
-    const { latitude, longitude } = coordinates;
+    if (isNaN(latitude) || isNaN(longitude)) {
+      alert('Please enter valid numbers for coordinates');
+      return;
+    }
+    
+    // Validate coordinate ranges
+    if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+      alert('Please enter valid coordinate ranges:\nLatitude: -90 to 90\nLongitude: -180 to 180');
+      return;
+    }
     
     // Validate South African coordinates (rough bounds)
     if (latitude < -35 || latitude > -22 || longitude < 16 || longitude > 33) {
@@ -289,7 +300,7 @@ function App() {
       setShowCreateModal(false);
       
       // Reset form
-      setNewProjectForm({ name: '', coordinates: '' });
+      setNewProjectForm({ name: '', latitude: '', longitude: '' });
       
     } catch (error) {
       console.error('❌ Error creating project:', error);
