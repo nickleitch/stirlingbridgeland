@@ -96,6 +96,7 @@ class LandDataResponse(BaseModel):
     status: ProjectStatus = Field(..., description="Query status")
     created_at: str = Field(..., description="Creation timestamp")
     total_boundaries: Optional[int] = Field(None, description="Total number of boundaries found")
+    elevation_stats: Optional[Dict[str, Any]] = Field(None, description="Elevation statistics from Open Topo Data")
 
 class ProjectResponse(BaseModel):
     """Response model for project data"""
