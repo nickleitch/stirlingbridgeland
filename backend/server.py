@@ -163,14 +163,74 @@ async def query_afrigis_wfs(latitude: float, longitude: float, layer_name: str):
         return {"features": []}
 
 async def query_additional_boundaries(latitude: float, longitude: float):
-    """Query additional boundary sources (placeholder for expansion)"""
-    # This is where we'll add queries to other South African boundary APIs
-    # Municipal boundaries, ward boundaries, conservation areas, etc.
+    """Query additional data sources - SANBI BGIS and AfriGIS"""
     additional_boundaries = []
     
-    # Placeholder for municipal boundaries API
-    # municipal_data = await query_municipal_api(latitude, longitude)
-    # additional_boundaries.extend(municipal_data)
+    # Query SANBI BGIS for contours and rivers
+    try:
+        # Query contours
+        contour_data = await query_sanbi_bgis(latitude, longitude, "contours", 5)
+        if contour_data.get("results"):
+            for result in contour_data["results"]:
+                if result.get("geometry") and result.get("attributes"):
+                    boundary = BoundaryLayer(
+                        layer_name=f"Contour_{result['attributes'].get('OBJECTID', 'unknown')}",
+                        layer_type="Contours",
+                        geometry=result["geometry"],
+                        properties=result["attributes"],
+                        source_api="SANBI_BGIS"
+                    )
+                    additional_boundaries.append(boundary)
+        
+        # Query rivers/water bodies
+        river_data = await query_sanbi_bgis(latitude, longitude, "contours", 4)
+        if river_data.get("results"):
+            for result in river_data["results"]:
+                if result.get("geometry") and result.get("attributes"):
+                    boundary = BoundaryLayer(
+                        layer_name=f"River_{result['attributes'].get('OBJECTID', 'unknown')}",
+                        layer_type="Water Bodies",
+                        geometry=result["geometry"],
+                        properties=result["attributes"],
+                        source_api="SANBI_BGIS"
+                    )
+                    additional_boundaries.append(boundary)
+        
+        # Query protected areas
+        protected_data = await query_sanbi_bgis(latitude, longitude, "conservation", 0)
+        if protected_data.get("results"):
+            for result in protected_data["results"]:
+                if result.get("geometry") and result.get("attributes"):
+                    boundary = BoundaryLayer(
+                        layer_name=f"Protected_Area_{result['attributes'].get('OBJECTID', 'unknown')}",
+                        layer_type="Environmental Constraints",
+                        geometry=result["geometry"],
+                        properties=result["attributes"],
+                        source_api="SANBI_BGIS"
+                    )
+                    additional_boundaries.append(boundary)
+    
+    except Exception as e:
+        print(f"Error querying SANBI BGIS: {str(e)}")
+    
+    # Query AfriGIS for roads (if API key is available)
+    try:
+        if AFRIGIS_AUTH_KEY:
+            # This is a placeholder structure - actual layer names need to be verified with AfriGIS documentation
+            road_data = await query_afrigis_wfs(latitude, longitude, "roads_major")  # Placeholder layer name
+            if road_data.get("features"):
+                for feature in road_data["features"]:
+                    if feature.get("geometry") and feature.get("properties"):
+                        boundary = BoundaryLayer(
+                            layer_name=f"Road_{feature['properties'].get('id', 'unknown')}",
+                            layer_type="Roads",
+                            geometry=feature["geometry"],
+                            properties=feature["properties"],
+                            source_api="AfriGIS"
+                        )
+                        additional_boundaries.append(boundary)
+    except Exception as e:
+        print(f"Error querying AfriGIS: {str(e)}")
     
     return additional_boundaries
 
