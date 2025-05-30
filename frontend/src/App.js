@@ -102,6 +102,8 @@ function App() {
   const [downloading, setDownloading] = useState(false);
   const [downloadingCAD, setDownloadingCAD] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [layerRefreshing, setLayerRefreshing] = useState({}); // Track per-layer refresh state
+  const [layerDownloading, setLayerDownloading] = useState({}); // Track per-layer download state
   const mapRef = useRef();
 
   // Initialize projects from localStorage and sync with database
