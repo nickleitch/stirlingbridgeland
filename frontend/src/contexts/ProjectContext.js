@@ -288,7 +288,8 @@ export const ProjectProvider = ({ children }) => {
     updateProject,
     deleteProject,
     setCurrentProject,
-    clearError
+    clearError,
+    clearAllLocalData
   };
 
   return (
