@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProject } from '../contexts/ProjectContext';
 import { useLayerMapping } from '../hooks/useLayerMapping';
-import { ProjectsHeader } from '../components/common/Header';
 import ProjectList from '../components/projects/ProjectList';
 import CreateProjectModal from '../components/projects/CreateProjectModal';
 
@@ -55,8 +54,27 @@ const ProjectsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <ProjectsHeader onCreateProject={() => setShowCreateModal(true)} />
+    <div className="min-h-screen bg-gray-50">
+      {/* Page Header with Create Button */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Projects</h1>
+              <p className="text-sm text-gray-600 mt-1">Manage your land development projects</p>
+            </div>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="bg-teal-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-teal-700 transition-colors flex items-center space-x-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              <span>New Project</span>
+            </button>
+          </div>
+        </div>
+      </div>
       
       <ProjectList 
         onProjectSelect={handleProjectSelect}
