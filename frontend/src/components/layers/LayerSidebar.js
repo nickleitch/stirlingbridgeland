@@ -5,7 +5,7 @@ import { LAYER_SECTIONS } from '../../config/layerConfig';
 
 const LayerSidebar = memo(() => {
   return (
-    <div className="w-80 bg-white shadow-lg flex flex-col">
+    <div className="w-80 bg-white shadow-lg rounded-xl flex flex-col">
       {/* Search */}
       <LayerSearch />
 
