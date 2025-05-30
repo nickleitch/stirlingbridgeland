@@ -293,6 +293,54 @@ class CADFileManager:
             except Exception as e:
                 print(f"Error generating property boundaries CAD layers: {str(e)}")
         
+        # Generate ArcGIS Administrative Boundaries layer
+        if admin_boundaries:
+            try:
+                filename, file_bytes = generator.create_layer_dwg(
+                    "administrative_boundaries",
+                    admin_boundaries,
+                    "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services"
+                )
+                cad_files["administrative_boundaries"] = (filename, file_bytes)
+            except Exception as e:
+                print(f"Error generating administrative boundaries CAD layer: {str(e)}")
+        
+        # Generate ArcGIS Urban Areas layer  
+        if urban_boundaries:
+            try:
+                filename, file_bytes = generator.create_layer_dwg(
+                    "urban_areas",
+                    urban_boundaries,
+                    "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services"
+                )
+                cad_files["urban_areas"] = (filename, file_bytes)
+            except Exception as e:
+                print(f"Error generating urban areas CAD layer: {str(e)}")
+        
+        # Generate ArcGIS Infrastructure layer
+        if infrastructure_boundaries:
+            try:
+                filename, file_bytes = generator.create_layer_dwg(
+                    "infrastructure", 
+                    infrastructure_boundaries,
+                    "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services"
+                )
+                cad_files["infrastructure"] = (filename, file_bytes)
+            except Exception as e:
+                print(f"Error generating infrastructure CAD layer: {str(e)}")
+        
+        # Generate ArcGIS Demographics layer
+        if demographics_boundaries:
+            try:
+                filename, file_bytes = generator.create_layer_dwg(
+                    "demographics",
+                    demographics_boundaries, 
+                    "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services"
+                )
+                cad_files["demographics"] = (filename, file_bytes)
+            except Exception as e:
+                print(f"Error generating demographics CAD layer: {str(e)}")
+        
         return cad_files
     
     def create_cad_package_zip(self, cad_files: Dict[str, Tuple[str, bytes]], project_name: str) -> bytes:
