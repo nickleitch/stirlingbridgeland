@@ -207,9 +207,7 @@ async def query_additional_boundaries(latitude: float, longitude: float):
         
         # Try Gauteng Conservation Plan
         try:
-            print(f"Querying Gauteng conservation for {latitude}, {longitude}")
             gauteng_protected_data = await query_sanbi_bgis(latitude, longitude, "conservation_gauteng", 0)
-            print(f"Gauteng protected data: {gauteng_protected_data}")
             if gauteng_protected_data.get("results"):
                 for result in gauteng_protected_data["results"]:
                     if result.get("geometry") and result.get("attributes"):
@@ -226,16 +224,13 @@ async def query_additional_boundaries(latitude: float, longitude: float):
                         )
                         additional_boundaries.append(boundary)
                         protected_areas_found = True
-                        print(f"Added Gauteng conservation area: {boundary.layer_name}")
         except Exception as e:
             print(f"Error querying Gauteng conservation areas: {str(e)}")
         
         # Try National Protected Areas if Gauteng didn't find any
         if not protected_areas_found:
             try:
-                print(f"Querying national protected areas for {latitude}, {longitude}")
                 national_protected_data = await query_sanbi_bgis(latitude, longitude, "conservation_national", 0)
-                print(f"National protected data: {national_protected_data}")
                 if national_protected_data.get("results"):
                     for result in national_protected_data["results"]:
                         if result.get("geometry") and result.get("attributes"):
@@ -250,7 +245,6 @@ async def query_additional_boundaries(latitude: float, longitude: float):
                                 source_api="SANBI_BGIS_National"
                             )
                             additional_boundaries.append(boundary)
-                            print(f"Added national protected area: {boundary.layer_name}")
             except Exception as e:
                 print(f"Error querying national protected areas: {str(e)}")
     
