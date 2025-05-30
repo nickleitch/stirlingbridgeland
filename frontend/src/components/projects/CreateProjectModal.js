@@ -82,6 +82,7 @@ const CreateProjectModal = memo(({ isOpen, onClose, onProjectCreated }) => {
   const handleClose = () => {
     setFormData({ name: '', latitude: '', longitude: '' });
     setValidationError('');
+    setIsSubmitting(false);
     clearError();
     onClose();
   };
