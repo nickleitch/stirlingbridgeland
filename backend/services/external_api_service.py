@@ -306,8 +306,8 @@ class SANBIAPIService(BaseAPIService):
             "geometry": json.dumps({"x": longitude, "y": latitude}),
             "geometryType": "esriGeometryPoint",
             "layers": f"visible:{layer_id}",
-            "tolerance": 50,
-            "mapExtent": f"{longitude-0.02},{latitude-0.02},{longitude+0.02},{latitude+0.02}",
+            "tolerance": 10,  # Reduced from 50 to 10 for more precise water body identification
+            "mapExtent": f"{longitude-0.005},{latitude-0.005},{longitude+0.005},{latitude+0.005}",  # Reduced from 0.02 to 0.005 degrees (~550m)
             "imageDisplay": "400,400,96",
             "returnGeometry": "true",
             "f": "json"
