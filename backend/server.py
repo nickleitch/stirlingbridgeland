@@ -64,7 +64,7 @@ SANBI_SERVICES = {
         }
     },
     "conservation_national": {
-        "url": "https://egismaps.environment.gov.za/ows/rest/services/Terrestrial_Protected_Areas/MapServer",
+        "url": "https://gis.westerncape.gov.za/server2/rest/services/SpatialDataWarehouse/Conservation/MapServer",
         "layers": {
             "protected_areas": 0
         }
