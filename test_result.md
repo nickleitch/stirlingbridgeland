@@ -279,9 +279,9 @@ Stirling Bridge LandDev App - Complete Development Summary: Professional-grade l
 ## frontend:
   - task: "Project Progress Summary"
     implemented: true
-    working: true
+    working: false
     file: "/app/frontend/src/components/projects/ProjectProgressSummaryForList.js"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: false
     status_history:
@@ -294,6 +294,9 @@ Stirling Bridge LandDev App - Complete Development Summary: Professional-grade l
         - working: true
           agent: "testing"
           comment: "Successfully tested the Project Progress Summary visualization that has been moved from the dashboard to the projects page. Each project now shows its own progress summary above the project card with 6 circular progress indicators (Base Data, Initial Concept, Specialist Input, Environmental Screening, Additional Design, Final SDP). The progress calculation is now based on available boundary data for each individual project, showing '0 boundaries available' for projects without data. The dashboard no longer shows the progress summary, which now only appears on the projects list page. The visual design is consistent with the previous implementation, showing the project name on the left and progress circles across. The layout is responsive for mobile devices."
+        - working: false
+          agent: "testing"
+          comment: "The updated Project Progress Summary component has critical issues. Testing revealed that the component has not been properly unified as requested. There are still duplicate project cards showing on the page - the progress summary component and a separate blue-green project card below it. The component does have the requested arrow on the right side and the progress circles are responsive, displaying correctly on both desktop and mobile views with 6 circles as required. However, the main requirement of unifying the components into a single clickable card has not been implemented correctly. Currently, there are duplicate project entries on the page, which does not match the requested unified design."
 
   - task: "Component Architecture"
     implemented: true
