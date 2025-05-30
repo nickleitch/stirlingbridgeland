@@ -266,7 +266,11 @@ def get_layer_color(layer_type: str) -> str:
         "Farm Portions": "#00FF00",           # Green
         "Erven": "#0000FF",                   # Blue
         "Holdings": "#FFFF00",                # Yellow
-        "Public Places": "#FF00FF"            # Magenta
+        "Public Places": "#FF00FF",           # Magenta
+        "Contours": "#8B4513",               # Brown
+        "Water Bodies": "#00BFFF",           # Deep Sky Blue
+        "Environmental Constraints": "#228B22", # Forest Green
+        "Roads": "#FF6347"                   # Tomato Red
     }
     return color_map.get(layer_type, "#000000")
 
@@ -276,7 +280,11 @@ def get_layer_weight(layer_type: str) -> float:
         "Farm Portions": 0.6,
         "Erven": 0.4,
         "Holdings": 0.5,
-        "Public Places": 0.3
+        "Public Places": 0.3,
+        "Contours": 0.2,
+        "Water Bodies": 0.8,
+        "Environmental Constraints": 0.7,
+        "Roads": 0.9
     }
     return weight_map.get(layer_type, 0.5)
 
