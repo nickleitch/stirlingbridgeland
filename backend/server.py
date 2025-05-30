@@ -237,19 +237,40 @@ async def query_additional_boundaries(latitude: float, longitude: float):
     
     # Query SANBI BGIS for contours and rivers
     try:
-        # Query contours
-        contour_data = await query_sanbi_bgis(latitude, longitude, "contours", 5)
-        if contour_data.get("results"):
-            for result in contour_data["results"]:
+        # Query both north and south contours to get full coverage
+        contour_boundaries = []
+        
+        # Query contours north (layer 6)
+        contour_north = await query_sanbi_bgis(latitude, longitude, "contours_north", 6)
+        if contour_north.get("results"):
+            for result in contour_north["results"]:
                 if result.get("geometry") and result.get("attributes"):
+                    height = result["attributes"].get("HEIGHT", "unknown")
                     boundary = BoundaryLayer(
-                        layer_name=f"Contour_{result['attributes'].get('OBJECTID', 'unknown')}",
+                        layer_name=f"Contour {height}m",
                         layer_type="Contours",
                         geometry=result["geometry"],
                         properties=result["attributes"],
                         source_api="SANBI_BGIS"
                     )
-                    additional_boundaries.append(boundary)
+                    contour_boundaries.append(boundary)
+        
+        # Query contours south (layer 7) 
+        contour_south = await query_sanbi_bgis(latitude, longitude, "contours_south", 7)
+        if contour_south.get("results"):
+            for result in contour_south["results"]:
+                if result.get("geometry") and result.get("attributes"):
+                    height = result["attributes"].get("HEIGHT", "unknown")
+                    boundary = BoundaryLayer(
+                        layer_name=f"Contour {height}m",
+                        layer_type="Contours", 
+                        geometry=result["geometry"],
+                        properties=result["attributes"],
+                        source_api="SANBI_BGIS"
+                    )
+                    contour_boundaries.append(boundary)
+        
+        additional_boundaries.extend(contour_boundaries)
         
         # Query rivers/water bodies
         river_data = await query_sanbi_bgis(latitude, longitude, "contours", 4)
