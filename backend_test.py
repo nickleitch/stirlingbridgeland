@@ -1047,143 +1047,229 @@ class StirlingBridgeAPITester:
             }
         }
 
+def test_statistics(self):
+    """Test the statistics endpoint"""
+    success, response = self.run_test(
+        "Statistics",
+        "GET",
+        "api/statistics",
+        200
+    )
+    self.test_results["statistics"] = {"success": success, "response": response}
+    
+    if success:
+        print(f"  - Application name: {response.get('application', {}).get('name')}")
+        print(f"  - Application version: {response.get('application', {}).get('version')}")
+        print(f"  - Environment: {response.get('application', {}).get('environment')}")
+        
+        # Check database stats
+        db_stats = response.get('database', {})
+        print(f"  - Database name: {db_stats.get('database_name')}")
+        print(f"  - Total projects: {db_stats.get('total_projects')}")
+        
+        # Check configuration
+        config = response.get('configuration', {})
+        print(f"  - ArcGIS configured: {config.get('arcgis_configured')}")
+        print(f"  - AfriGIS configured: {config.get('afrigis_configured')}")
+        print(f"  - Cache TTL: {config.get('cache_ttl_seconds')} seconds")
+    
+    return success, response
+
 def main():
+    # Read the backend URL from the frontend .env file
+    import os
+    
     # Use the public endpoint from the .env file
     backend_url = "https://86a77ba3-9257-494f-8091-f8593f088bf7.preview.emergentagent.com"
     
-    print(f"Testing Stirling Bridge LandDev API at: {backend_url}")
+    print(f"Testing Refactored Stirling Bridge LandDev API at: {backend_url}")
     print(f"\n{'='*80}")
-    print(f"MONGODB INTEGRATION TESTING")
+    print(f"TESTING REFACTORED SERVICE LAYER ARCHITECTURE")
     print(f"{'='*80}")
     
     # Setup tester
     tester = StirlingBridgeAPITester(backend_url)
     
-    # Test health check
+    # Test health check endpoint
+    print(f"\n{'='*80}")
+    print(f"1. TESTING HEALTH CHECK ENDPOINT")
+    print(f"{'='*80}")
     tester.test_health_check()
     
-    # Test boundary types
+    # Test boundary types endpoint
+    print(f"\n{'='*80}")
+    print(f"2. TESTING BOUNDARY TYPES ENDPOINT")
+    print(f"{'='*80}")
     tester.test_boundary_types()
     
-    # Test MongoDB integration with the specific coordinates from the requirements
+    # Test land identification endpoint with Johannesburg coordinates
     print(f"\n{'='*80}")
-    print(f"TESTING MONGODB PROJECT CREATION AND RETRIEVAL")
+    print(f"3. TESTING LAND IDENTIFICATION ENDPOINT")
     print(f"{'='*80}")
-    
-    # Create a test project in MongoDB
     success, response = tester.test_identify_land(
         -26.2041, 
         28.0473, 
-        "Test MongoDB Project"
+        "Johannesburg Test Project"
     )
     
-    # If we have a project ID, test the project retrieval and download files
+    # If we have a project ID, test the project retrieval and related endpoints
     if success and tester.project_id:
-        # Test project retrieval
+        # Test project retrieval endpoint
+        print(f"\n{'='*80}")
+        print(f"4. TESTING PROJECT RETRIEVAL ENDPOINT")
+        print(f"{'='*80}")
         tester.test_get_project(tester.project_id)
         
-        # Test file downloads
-        tester.test_download_files(tester.project_id)
-        
-        # Test listing all projects
+        # Test project listing endpoint
+        print(f"\n{'='*80}")
+        print(f"5. TESTING PROJECT LISTING ENDPOINT")
+        print(f"{'='*80}")
         tester.test_list_projects()
         
+        # Test file downloads
+        print(f"\n{'='*80}")
+        print(f"6. TESTING CAD FILE GENERATION AND DOWNLOADS")
+        print(f"{'='*80}")
+        tester.test_download_files(tester.project_id)
+        
         # Test error handling for non-existent project
+        print(f"\n{'='*80}")
+        print(f"7. TESTING ERROR HANDLING")
+        print(f"{'='*80}")
         tester.test_nonexistent_project()
         
-        # Test data persistence
-        tester.test_data_persistence()
+        # Test invalid coordinates
+        tester.test_invalid_coordinates()
+        
+        # Test statistics endpoint
+        print(f"\n{'='*80}")
+        print(f"8. TESTING STATISTICS ENDPOINT")
+        print(f"{'='*80}")
+        tester.test_statistics()
     
-    # Generate MongoDB integration test summary
+    # Generate test summary
     print(f"\n{'='*80}")
-    print(f"MONGODB INTEGRATION TEST SUMMARY")
+    print(f"REFACTORED API TEST SUMMARY")
     print(f"{'='*80}")
     
     print(f"\n📊 Tests passed: {tester.tests_passed}/{tester.tests_run}")
     
-    # MongoDB-specific test results
-    print(f"\n🔍 MONGODB INTEGRATION VERIFICATION:")
+    # Summarize key endpoints
+    print(f"\n🔍 KEY ENDPOINT VERIFICATION:")
     
-    # 1. Database Connection
-    print(f"  1. Database Connection:")
-    if tester.mongodb_test_results.get("project_creation", {}).get("success", False):
-        print(f"     ✅ MongoDB connection established successfully")
+    # 1. Health Check
+    print(f"  1. Health Check Endpoint:")
+    if tester.test_results.get("health_check", {}).get("success", False):
+        print(f"     ✅ Health check endpoint is working")
+        health_data = tester.test_results.get("health_check", {}).get("response", {})
+        print(f"     - Status: {health_data.get('status')}")
+        print(f"     - Service: {health_data.get('service')}")
+        print(f"     - Version: {health_data.get('version')}")
     else:
-        print(f"     ❌ MongoDB connection failed")
+        print(f"     ❌ Health check endpoint failed")
     
-    # 2. Project Creation
-    print(f"  2. Project Creation:")
-    if tester.mongodb_test_results.get("project_creation", {}).get("success", False):
-        project_id = tester.mongodb_test_results.get("project_creation", {}).get("project_id", "unknown")
-        project_name = tester.mongodb_test_results.get("project_creation", {}).get("project_name", "unknown")
-        print(f"     ✅ Successfully created project in MongoDB")
-        print(f"     - Project ID: {project_id}")
-        print(f"     - Project Name: {project_name}")
+    # 2. Boundary Types
+    print(f"  2. Boundary Types Endpoint:")
+    if tester.test_results.get("boundary_types", {}).get("success", False):
+        boundary_data = tester.test_results.get("boundary_types", {}).get("response", {})
+        boundary_types = boundary_data.get("boundary_types", [])
+        print(f"     ✅ Boundary types endpoint is working")
+        print(f"     - Total types: {boundary_data.get('total_types')}")
+        print(f"     - Types: {', '.join([bt.get('type') for bt in boundary_types[:5]])}")
+        if len(boundary_types) > 5:
+            print(f"       and {len(boundary_types) - 5} more...")
     else:
-        print(f"     ❌ Failed to create project in MongoDB")
+        print(f"     ❌ Boundary types endpoint failed")
     
-    # 3. Project Retrieval
-    print(f"  3. Project Retrieval:")
-    if tester.mongodb_test_results.get("list_projects", {}).get("success", False):
-        project_count = tester.mongodb_test_results.get("list_projects", {}).get("project_count", 0)
-        print(f"     ✅ Successfully retrieved {project_count} projects from MongoDB")
+    # 3. Land Identification
+    print(f"  3. Land Identification Endpoint:")
+    land_id_test = next((k for k in tester.test_results.keys() if k.startswith("identify_land_")), None)
+    if land_id_test and tester.test_results.get(land_id_test, {}).get("success", False):
+        land_data = tester.test_results.get(land_id_test, {}).get("response", {})
+        print(f"     ✅ Land identification endpoint is working")
+        print(f"     - Project ID: {land_data.get('project_id')}")
+        print(f"     - Status: {land_data.get('status')}")
+        print(f"     - Boundaries found: {len(land_data.get('boundaries', []))}")
+        print(f"     - Files generated: {len(land_data.get('files_generated', []))}")
     else:
-        print(f"     ❌ Failed to retrieve projects from MongoDB")
+        print(f"     ❌ Land identification endpoint failed")
     
-    # 4. Individual Project
-    print(f"  4. Individual Project Retrieval:")
-    if tester.test_results.get(f"get_project_{tester.project_id}", {}).get("success", False):
-        print(f"     ✅ Successfully retrieved individual project from MongoDB")
+    # 4. Project Retrieval
+    print(f"  4. Project Retrieval Endpoint:")
+    if tester.project_id and tester.test_results.get(f"get_project_{tester.project_id}", {}).get("success", False):
+        project_data = tester.test_results.get(f"get_project_{tester.project_id}", {}).get("response", {})
+        print(f"     ✅ Project retrieval endpoint is working")
+        print(f"     - Project ID: {project_data.get('id')}")
+        print(f"     - Project Name: {project_data.get('name')}")
     else:
-        print(f"     ❌ Failed to retrieve individual project from MongoDB")
+        print(f"     ❌ Project retrieval endpoint failed")
     
-    # 5. File Downloads
-    print(f"  5. File Downloads:")
-    if tester.mongodb_test_results.get("download_files", {}).get("success", False):
-        filename = tester.mongodb_test_results.get("download_files", {}).get("filename", "unknown")
-        print(f"     ✅ Successfully downloaded files from MongoDB-stored project")
-        print(f"     - Filename: {filename}")
+    # 5. Project Listing
+    print(f"  5. Project Listing Endpoint:")
+    if tester.test_results.get("list_projects", {}).get("success", False):
+        list_data = tester.test_results.get("list_projects", {}).get("response", {})
+        print(f"     ✅ Project listing endpoint is working")
+        print(f"     - Total projects: {list_data.get('total_count')}")
+        print(f"     - Projects returned: {len(list_data.get('projects', []))}")
     else:
-        print(f"     ❌ Failed to download files from MongoDB-stored project")
+        print(f"     ❌ Project listing endpoint failed")
     
-    # 6. Data Persistence
-    print(f"  6. Data Persistence:")
-    if tester.mongodb_test_results.get("data_persistence", {}).get("success", False):
-        persistence_id = tester.mongodb_test_results.get("data_persistence", {}).get("project_id", "unknown")
-        print(f"     ✅ Data persists in MongoDB across simulated server restarts")
-        print(f"     - Persistence Test Project ID: {persistence_id}")
+    # 6. File Downloads
+    print(f"  6. CAD File Generation and Downloads:")
+    if tester.project_id and tester.test_results.get(f"download_files_{tester.project_id}", {}).get("success", False):
+        download_data = tester.test_results.get(f"download_files_{tester.project_id}", {})
+        print(f"     ✅ File download endpoint is working")
+        print(f"     - Filename: {download_data.get('filename')}")
+        print(f"     - Content Type: {download_data.get('content_type')}")
     else:
-        error = tester.mongodb_test_results.get("data_persistence", {}).get("error", "unknown error")
-        print(f"     ❌ Data persistence test failed: {error}")
+        print(f"     ❌ File download endpoint failed")
     
     # 7. Error Handling
     print(f"  7. Error Handling:")
-    if tester.mongodb_test_results.get("nonexistent_project", {}).get("success", False):
-        print(f"     ✅ Properly handles non-existent projects with 404 error")
+    if tester.test_results.get("nonexistent_project", {}).get("success", False):
+        print(f"     ✅ Error handling for non-existent projects is working")
     else:
-        print(f"     ❌ Failed to properly handle non-existent projects")
+        print(f"     ❌ Error handling for non-existent projects failed")
+        
+    if tester.test_results.get("invalid_coordinates", {}).get("empty", {}).get("success", False):
+        print(f"     ✅ Error handling for empty coordinates is working")
+    else:
+        print(f"     ❌ Error handling for empty coordinates failed")
     
-    # Overall MongoDB integration status
-    mongodb_tests = [
-        tester.mongodb_test_results.get("project_creation", {}).get("success", False),
-        tester.mongodb_test_results.get("list_projects", {}).get("success", False),
-        tester.test_results.get(f"get_project_{tester.project_id}", {}).get("success", False),
-        tester.mongodb_test_results.get("download_files", {}).get("success", False),
-        tester.mongodb_test_results.get("data_persistence", {}).get("success", False),
-        tester.mongodb_test_results.get("nonexistent_project", {}).get("success", False)
+    # 8. Statistics Endpoint
+    print(f"  8. Statistics Endpoint:")
+    if tester.test_results.get("statistics", {}).get("success", False):
+        stats_data = tester.test_results.get("statistics", {}).get("response", {})
+        print(f"     ✅ Statistics endpoint is working")
+        print(f"     - Application: {stats_data.get('application', {}).get('name')}")
+        print(f"     - Database: {stats_data.get('database', {}).get('database_name')}")
+        print(f"     - Total projects: {stats_data.get('database', {}).get('total_projects')}")
+    else:
+        print(f"     ❌ Statistics endpoint failed")
+    
+    # Overall API status
+    api_tests = [
+        tester.test_results.get("health_check", {}).get("success", False),
+        tester.test_results.get("boundary_types", {}).get("success", False),
+        land_id_test and tester.test_results.get(land_id_test, {}).get("success", False),
+        tester.project_id and tester.test_results.get(f"get_project_{tester.project_id}", {}).get("success", False),
+        tester.test_results.get("list_projects", {}).get("success", False),
+        tester.project_id and tester.test_results.get(f"download_files_{tester.project_id}", {}).get("success", False),
+        tester.test_results.get("nonexistent_project", {}).get("success", False),
+        tester.test_results.get("statistics", {}).get("success", False)
     ]
     
-    mongodb_success_count = sum(1 for test in mongodb_tests if test)
-    mongodb_test_count = len(mongodb_tests)
+    api_success_count = sum(1 for test in api_tests if test)
+    api_test_count = len(api_tests)
     
-    print(f"\n📊 MongoDB Integration Tests: {mongodb_success_count}/{mongodb_test_count} passed")
+    print(f"\n📊 Refactored API Tests: {api_success_count}/{api_test_count} passed")
     
-    if mongodb_success_count == mongodb_test_count:
-        print(f"✅ MongoDB integration is fully functional")
-    elif mongodb_success_count >= mongodb_test_count * 0.75:
-        print(f"⚠️ MongoDB integration is mostly functional with some issues")
+    if api_success_count == api_test_count:
+        print(f"✅ Refactored API is fully functional")
+    elif api_success_count >= api_test_count * 0.75:
+        print(f"⚠️ Refactored API is mostly functional with some issues")
     else:
-        print(f"❌ MongoDB integration has significant issues")
+        print(f"❌ Refactored API has significant issues")
     
     return 0 if tester.tests_passed == tester.tests_run else 1
 
