@@ -1,5 +1,4 @@
 import React, { memo, useMemo } from 'react';
-import { useProject } from '../../contexts/ProjectContext';
 import { useLayer } from '../../contexts/LayerContext';
 import { LAYER_SECTIONS } from '../../config/layerConfig';
 
