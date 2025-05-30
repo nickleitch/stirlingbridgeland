@@ -307,10 +307,13 @@ class ArcGISAPIService:
         basemap = self.basemap_services[basemap_key]
         
         try:
+            # Get OAuth2 token
+            token = await self.get_access_token()
+            
             async with httpx.AsyncClient(timeout=self.base_timeout) as client:
                 params = {"f": "json"}
-                if self.api_key:
-                    params["token"] = self.api_key
+                if token:
+                    params["token"] = token
                 
                 response = await client.get(basemap["service_url"], params=params)
                 response.raise_for_status()
