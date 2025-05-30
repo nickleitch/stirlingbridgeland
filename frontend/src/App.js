@@ -262,9 +262,35 @@ function App() {
   };
 
   // Get available boundaries for a layer type
-  const getBoundariesForLayer = (layerType) => {
+  const getBoundariesForLayer = (layerId) => {
     if (!result?.boundaries) return [];
-    return result.boundaries.filter(boundary => boundary.layer_type === layerType);
+    
+    // Map layer IDs to boundary types
+    switch(layerId) {
+      case 'property_boundaries':
+        return result.boundaries.filter(boundary => 
+          ['Farm Portions', 'Erven', 'Holdings', 'Public Places'].includes(boundary.layer_type)
+        );
+      case 'roads_existing':
+        return result.boundaries.filter(boundary => boundary.layer_type === 'Roads');
+      case 'topography_basic':
+      case 'contours_major':
+        return result.boundaries.filter(boundary => boundary.layer_type === 'Contours');
+      case 'water_bodies':
+        return result.boundaries.filter(boundary => boundary.layer_type === 'Water Bodies');
+      case 'environmental_constraints':
+        return result.boundaries.filter(boundary => boundary.layer_type === 'Environmental Constraints');
+      default:
+        // For other layers, find by matching type in layer definitions
+        const layer = Object.values(LAYER_SECTIONS).find(section => 
+          section.layers.some(l => l.id === layerId)
+        )?.layers.find(l => l.id === layerId);
+        
+        if (layer) {
+          return result.boundaries.filter(boundary => boundary.layer_type === layer.type);
+        }
+        return [];
+    }
   };
 
   // Convert geometry to Leaflet format
