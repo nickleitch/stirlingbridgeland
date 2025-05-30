@@ -247,7 +247,7 @@ async def query_additional_boundaries(latitude: float, longitude: float):
         contour_boundaries = []
         
         # Query contours north (layer 6)
-        contour_north = await query_sanbi_bgis(latitude, longitude, "sanbi_bgis", 6)
+        contour_north = await query_sanbi_bgis(latitude, longitude, "contours", 6)
         if contour_north.get("results"):
             for result in contour_north["results"]:
                 if result.get("geometry") and result.get("attributes"):
@@ -262,7 +262,7 @@ async def query_additional_boundaries(latitude: float, longitude: float):
                     contour_boundaries.append(boundary)
         
         # Query contours south (layer 7) 
-        contour_south = await query_sanbi_bgis(latitude, longitude, "sanbi_bgis", 7)
+        contour_south = await query_sanbi_bgis(latitude, longitude, "contours", 7)
         if contour_south.get("results"):
             for result in contour_south["results"]:
                 if result.get("geometry") and result.get("attributes"):
