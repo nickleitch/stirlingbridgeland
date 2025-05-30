@@ -422,11 +422,16 @@ class ExternalAPIManager:
         if self.arcgis_service:
             tasks.append(self._get_arcgis_data(latitude, longitude))
         
+        # Add Open Topo Data if available
+        if self.open_topo_service:
+            tasks.append(self._get_open_topo_data(latitude, longitude))
+        
         responses = await asyncio.gather(*tasks, return_exceptions=True)
         
         # Combine all boundaries
         all_boundaries = []
         all_errors = []
+        elevation_stats = None
         
         for i, response in enumerate(responses):
             if isinstance(response, Exception):
@@ -438,18 +443,27 @@ class ExternalAPIManager:
                     all_boundaries.extend(response.data["boundaries"])
                 if response.data.get("errors"):
                     all_errors.extend(response.data["errors"])
+                # Capture elevation statistics if available
+                if response.data.get("elevation_stats"):
+                    elevation_stats = response.data["elevation_stats"]
             else:
                 if hasattr(response, 'error'):
                     all_errors.append(response.error)
         
         logger.info(f"Comprehensive query complete: {len(all_boundaries)} boundaries, {len(all_errors)} errors")
         
-        return {
+        result = {
             "boundaries": all_boundaries,
             "total_boundaries": len(all_boundaries),
             "errors": all_errors,
             "query_timestamp": datetime.now().isoformat()
         }
+        
+        # Add elevation statistics if available
+        if elevation_stats:
+            result["elevation_stats"] = elevation_stats
+        
+        return result
     
     async def _get_arcgis_data(self, latitude: float, longitude: float) -> APIResponse:
         """Get ArcGIS data and format as APIResponse"""
