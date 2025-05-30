@@ -105,10 +105,7 @@ const AppContent = () => {
         onBackToProjects={handleBackToProjects}
       />
 
-      <div className="flex-1 flex">
-        <LayerSidebar />
-        <MapContainer />
-      </div>
+      <Dashboard />
     </div>
   );
 };
