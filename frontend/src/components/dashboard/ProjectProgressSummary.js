@@ -126,7 +126,7 @@ const ProjectProgressSummary = memo(({ project }) => {
       <div className="block lg:hidden mt-6">
         <div className="text-center mb-4">
           <div className="text-xl font-bold text-slate-800">
-            {currentProject.name}
+            {project.name}
           </div>
           <div className="text-sm text-slate-600 mt-1">
             Layer Progress Summary
