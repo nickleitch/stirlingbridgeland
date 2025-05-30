@@ -12,6 +12,7 @@ const CreateProjectModal = memo(({ isOpen, onClose, onProjectCreated }) => {
     longitude: ''
   });
   const [validationError, setValidationError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
