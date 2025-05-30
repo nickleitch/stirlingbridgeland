@@ -15,6 +15,9 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.errors import DuplicateKeyError
 import asyncio
 
+# Import CAD generation system
+from cad_generator import CADFileManager, SDPLayerGenerator
+
 # Database configuration
 MONGO_URL = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
 DATABASE_NAME = "stirling_landdev"
