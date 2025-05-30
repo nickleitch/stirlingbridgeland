@@ -1,12 +1,20 @@
 import React, { memo, useMemo } from 'react';
 import { LAYER_SECTIONS } from '../../config/layerConfig';
 
-const ProgressCircle = memo(({ percentage, title, onClick }) => {
+const ProgressCircle = memo(({ percentage, title, onClick, size = 'default' }) => {
   const numSegments = 10;
   const filledSegments = Math.round((percentage / 100) * numSegments);
-  const radius = 36;
-  const centerX = 45;
-  const centerY = 45;
+  
+  // Responsive sizing based on screen and size prop
+  const sizeConfig = {
+    small: { radius: 24, centerX: 30, centerY: 30, strokeWidth: 5, viewBox: "0 0 60 60" },
+    default: { radius: 36, centerX: 45, centerY: 45, strokeWidth: 8, viewBox: "0 0 90 90" },
+    responsive: { radius: 30, centerX: 37.5, centerY: 37.5, strokeWidth: 6, viewBox: "0 0 75 75" }
+  };
+  
+  const config = sizeConfig[size] || sizeConfig.default;
+  const { radius, centerX, centerY, strokeWidth, viewBox } = config;
+  
   const segmentAngle = 360 / numSegments;
   const gapAngle = 3;
 
@@ -35,30 +43,48 @@ const ProgressCircle = memo(({ percentage, title, onClick }) => {
         className={`segment ${isFilled ? 'filled-segment' : 'bg-segment'}`}
         d={pathData}
         fill="none"
-        strokeWidth="8"
+        strokeWidth={strokeWidth}
         strokeLinecap="butt"
         stroke={isFilled ? '#4a9b9e' : '#d4d4d8'}
       />
     );
   }
 
+  const containerSizeClass = {
+    small: "w-[60px] h-[60px]",
+    default: "w-[90px] h-[90px]",
+    responsive: "w-[75px] h-[75px] xl:w-[90px] xl:h-[90px]"
+  };
+
+  const textSizeClass = {
+    small: "text-lg",
+    default: "text-2xl",
+    responsive: "text-xl xl:text-2xl"
+  };
+
+  const titleSizeClass = {
+    small: "text-[10px]",
+    default: "text-xs",
+    responsive: "text-[10px] xl:text-xs"
+  };
+
   return (
     <div 
-      className="step cursor-pointer transition-all duration-200 hover:-translate-y-0.5 text-center flex-1"
+      className="step cursor-pointer transition-all duration-200 hover:-translate-y-0.5 text-center flex-1 min-w-0"
       onClick={onClick}
     >
-      <div className="progress-circle relative w-[90px] h-[90px] mx-auto mb-2">
+      <div className={`progress-circle relative ${containerSizeClass[size]} mx-auto mb-2`}>
         <svg 
-          viewBox="0 0 90 90" 
+          viewBox={viewBox}
           className="w-full h-full transform -rotate-90"
         >
           {segments}
         </svg>
-        <div className="progress-percentage absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-2xl font-bold text-[#4a9b9e]">
+        <div className={`progress-percentage absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 ${textSizeClass[size]} font-bold text-[#4a9b9e]`}>
           {percentage}%
         </div>
       </div>
-      <div className="step-title text-xs font-semibold text-slate-600 whitespace-nowrap">
+      <div className={`step-title ${titleSizeClass[size]} font-semibold text-slate-600 whitespace-nowrap overflow-hidden text-ellipsis`}>
         {title}
       </div>
     </div>
