@@ -63,7 +63,7 @@ class ProjectResponse(BaseModel):
     coordinates: Dict[str, float]
     created: str
     lastModified: str
-    data: Optional[Dict[str, Any]] = None
+    data: Optional[List[Any]] = None  # Changed to List to hold boundaries array
     layers: Optional[Dict[str, Any]] = None
 
 app = FastAPI(title="Stirling Bridge LandDev API")
