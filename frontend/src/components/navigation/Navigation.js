@@ -55,17 +55,52 @@ const Navigation = () => {
           {/* Logo and App Name */}
           <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center">
-              <div className="h-8 w-8 bg-gradient-to-r from-teal-500 to-teal-600 rounded-lg flex items-center justify-center">
-                <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-6 3l6-3" />
+              {/* Landstream Logo SVG */}
+              <div className="h-10 w-10 mr-3">
+                <svg viewBox="0 0 100 100" className="h-10 w-10">
+                  <circle 
+                    cx="50" 
+                    cy="50" 
+                    r="45" 
+                    fill="none" 
+                    stroke="#374151" 
+                    strokeWidth="8"
+                  />
+                  {/* Horizontal line */}
+                  <line 
+                    x1="20" 
+                    y1="50" 
+                    x2="80" 
+                    y2="50" 
+                    stroke="#374151" 
+                    strokeWidth="6"
+                  />
+                  {/* Vertical line */}
+                  <line 
+                    x1="50" 
+                    y1="20" 
+                    x2="50" 
+                    y2="80" 
+                    stroke="#374151" 
+                    strokeWidth="6"
+                  />
+                  {/* Bottom extension */}
+                  <line 
+                    x1="50" 
+                    y1="80" 
+                    x2="50" 
+                    y2="95" 
+                    stroke="#374151" 
+                    strokeWidth="6"
+                  />
                 </svg>
               </div>
-              <div className="ml-3">
-                <h1 className="text-xl font-bold text-gray-900">
-                  Stirling Bridge
+              <div className="ml-1">
+                <h1 className="text-xl font-bold text-gray-900 tracking-wider">
+                  LANDSTREAM
                 </h1>
-                <p className="text-xs text-gray-500 -mt-1">
-                  LandDev Platform
+                <p className="text-xs text-gray-500 -mt-1 tracking-wide">
+                  URBAN PLANNING & DEVELOPMENT PROCESS
                 </p>
               </div>
             </div>
