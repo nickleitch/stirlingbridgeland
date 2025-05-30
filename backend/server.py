@@ -226,15 +226,21 @@ async def identify_land(coordinates: CoordinateInput):
             # Continue anyway - don't fail the request if database save fails
         
         # Create response
-        response = LandDataResponse(
-            project_id=project_id,
-            coordinates={"latitude": coordinates.latitude, "longitude": coordinates.longitude},
-            boundaries=boundary_layers,
-            files_generated=files_generated,
-            status=project_status,
-            created_at=timestamp,
-            total_boundaries=len(boundary_layers)
-        )
+        response_data = {
+            "project_id": project_id,
+            "coordinates": {"latitude": coordinates.latitude, "longitude": coordinates.longitude},
+            "boundaries": boundary_layers,
+            "files_generated": files_generated,
+            "status": project_status,
+            "created_at": timestamp,
+            "total_boundaries": len(boundary_layers)
+        }
+        
+        # Add elevation statistics if available
+        if land_data.get("elevation_stats"):
+            response_data["elevation_stats"] = land_data["elevation_stats"]
+        
+        response = LandDataResponse(**response_data)
         
         logger.info(f"Land identification complete: {len(boundary_layers)} boundaries found")
         return response
