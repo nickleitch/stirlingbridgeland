@@ -67,7 +67,7 @@ const ProgressCircle = memo(({ percentage, title, onClick }) => {
 
 ProgressCircle.displayName = 'ProgressCircle';
 
-const ProjectProgressSummaryForList = memo(({ project }) => {
+const ProjectProgressSummaryForList = memo(({ project, onSelect }) => {
   // Calculate progress based on available data for this project
   const sectionProgress = useMemo(() => {
     const availableBoundaryTypes = new Set();
@@ -85,7 +85,6 @@ const ProjectProgressSummaryForList = memo(({ project }) => {
       const totalLayers = section.layers.length;
       
       // For projects list, show progress based on available data
-      // This is a simplified calculation - in a real app you might want to store this in the project data
       let availableLayers = 0;
       
       section.layers.forEach(layer => {
@@ -145,13 +144,30 @@ const ProjectProgressSummaryForList = memo(({ project }) => {
     console.log(`Project "${project.name}" - ${stepData.name}: ${stepData.percentage}% (${stepData.availableLayers}/${stepData.totalLayers} layers have data)`);
   };
 
+  const handleProjectClick = () => {
+    onSelect(project);
+  };
+
   if (!project) return null;
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6 mb-4">
-      <div className="flex items-center gap-6">
+    <div 
+      className="bg-white rounded-xl shadow-lg p-6 mb-6 cursor-pointer hover:shadow-xl transition-all transform hover:scale-[1.01] border border-gray-100"
+      onClick={handleProjectClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleProjectClick();
+        }
+      }}
+      aria-label={`Open project ${project.name}`}
+    >
+      {/* Desktop Layout */}
+      <div className="hidden lg:flex items-center gap-6">
         {/* Project Info */}
-        <div className="min-w-[200px]">
+        <div className="min-w-[220px] flex-shrink-0">
           <div className="text-xl font-bold text-slate-800">
             {project.name}
           </div>
@@ -161,44 +177,83 @@ const ProjectProgressSummaryForList = memo(({ project }) => {
           <div className="text-xs text-slate-500 mt-1">
             {project.data ? project.data.length : 0} boundaries available
           </div>
+          <div className="text-xs text-gray-500 mt-2">
+            📍 {project.coordinates.latitude.toFixed(4)}, {project.coordinates.longitude.toFixed(4)}
+          </div>
+          <div className="text-xs text-gray-500 mt-1">
+            Created: {new Date(project.created).toLocaleDateString()}
+          </div>
         </div>
 
-        {/* Steps Progress */}
-        <div className="flex-1 flex items-center justify-between gap-4">
+        {/* Steps Progress - Responsive sizing */}
+        <div className="flex-1 flex items-center justify-between gap-2 xl:gap-4 min-w-0">
           {sectionProgress.map((step, index) => (
             <ProgressCircle
               key={step.name}
               percentage={step.percentage}
               title={step.name}
-              onClick={() => handleStepClick(step)}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleStepClick(step);
+              }}
+              size="responsive"
             />
           ))}
         </div>
+
+        {/* Click Arrow */}
+        <div className="flex-shrink-0 ml-4">
+          <div className="flex items-center space-x-3">
+            <div className="text-center">
+              <div className="text-sm font-medium text-gray-900">
+                {project.data ? project.data.length : 0}
+              </div>
+              <div className="text-xs text-gray-500">Boundaries</div>
+            </div>
+            
+            <div className="w-6 h-6 text-gray-400">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Responsive Layout for smaller screens */}
-      <div className="block lg:hidden mt-6">
-        <div className="text-center mb-4">
-          <div className="text-xl font-bold text-slate-800">
-            {project.name}
+      {/* Mobile/Tablet Layout */}
+      <div className="block lg:hidden">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex-1">
+            <div className="text-lg font-bold text-slate-800">
+              {project.name}
+            </div>
+            <div className="text-sm text-slate-600 mt-1">
+              {project.data ? project.data.length : 0} boundaries • Layer Progress Summary
+            </div>
+            <div className="text-xs text-gray-500 mt-1">
+              📍 {project.coordinates.latitude.toFixed(4)}, {project.coordinates.longitude.toFixed(4)}
+            </div>
           </div>
-          <div className="text-sm text-slate-600 mt-1">
-            Layer Progress Summary
-          </div>
-          <div className="text-xs text-slate-500 mt-1">
-            {project.data ? project.data.length : 0} boundaries available
+          
+          <div className="w-6 h-6 text-gray-400 ml-4">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
           </div>
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
           {sectionProgress.map((step, index) => (
-            <div key={step.name} className="flex flex-col items-center">
-              <ProgressCircle
-                percentage={step.percentage}
-                title={step.name}
-                onClick={() => handleStepClick(step)}
-              />
-            </div>
+            <ProgressCircle
+              key={step.name}
+              percentage={step.percentage}
+              title={step.name}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleStepClick(step);
+              }}
+              size="small"
+            />
           ))}
         </div>
       </div>
