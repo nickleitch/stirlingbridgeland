@@ -129,7 +129,7 @@ export const ProjectProvider = ({ children }) => {
         const dbProjects = response.data.projects || [];
         
         // Check for sync issues between localStorage and database
-        const localProjects = JSON.parse(localStorage.getItem('projects') || '[]');
+        const localProjects = JSON.parse(localStorage.getItem('stirling_projects') || '[]');
         const localProjectIds = new Set(localProjects.map(p => p.id));
         const dbProjectIds = new Set(dbProjects.map(p => p.id));
         
@@ -139,7 +139,7 @@ export const ProjectProvider = ({ children }) => {
           console.warn(`Found ${orphanedProjects.length} orphaned projects in localStorage, cleaning up...`);
           // Remove orphaned projects from localStorage
           const cleanedProjects = localProjects.filter(p => dbProjectIds.has(p.id));
-          localStorage.setItem('projects', JSON.stringify(cleanedProjects));
+          localStorage.setItem('stirling_projects', JSON.stringify(cleanedProjects));
         }
         
         dispatch({ 
