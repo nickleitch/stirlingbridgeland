@@ -255,6 +255,10 @@ class CADFileManager:
         # Categorize boundaries by type
         contour_boundaries = [b for b in boundaries if b.get('layer_type') == 'Contours']
         property_boundaries = [b for b in boundaries if b.get('layer_type') == 'Property Boundaries']
+        admin_boundaries = [b for b in boundaries if b.get('layer_type') == 'Administrative Boundaries']
+        urban_boundaries = [b for b in boundaries if b.get('layer_type') == 'Urban Planning']
+        infrastructure_boundaries = [b for b in boundaries if b.get('layer_type') == 'Infrastructure']
+        demographics_boundaries = [b for b in boundaries if b.get('layer_type') == 'Demographics']
         
         # Generate contours layer
         if contour_boundaries:
