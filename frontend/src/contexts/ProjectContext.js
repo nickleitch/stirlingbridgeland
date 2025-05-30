@@ -266,6 +266,14 @@ export const ProjectProvider = ({ children }) => {
     dispatch({ type: PROJECT_ACTIONS.CLEAR_ERROR });
   };
 
+  const clearAllLocalData = () => {
+    // Clear all localStorage data and reset state
+    localStorage.removeItem('projects');
+    localStorage.removeItem('stirling_projects'); // Legacy key
+    dispatch({ type: PROJECT_ACTIONS.SET_PROJECTS, payload: [] });
+    dispatch({ type: PROJECT_ACTIONS.SET_CURRENT_PROJECT, payload: null });
+  };
+
   const value = {
     // State
     projects: state.projects,
