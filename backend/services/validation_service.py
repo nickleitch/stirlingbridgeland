@@ -42,6 +42,7 @@ class SourceAPI(str, Enum):
     SANBI_BGIS_NATIONAL = "SANBI_BGIS_National"
     ARCGIS_ONLINE = "ArcGIS_Online"
     AFRIGIS = "AfriGIS"
+    OPENTOPODATA = "OpenTopoData"
 
 # Input Models
 class CoordinateInput(BaseModel, CoordinateValidationMixin):
