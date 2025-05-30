@@ -111,18 +111,24 @@ function App() {
     setProjects(projectList);
   };
 
-  const createNewProject = async () => {
-    const projectName = prompt('Enter project name:');
-    if (!projectName) return;
+  const createNewProject = () => {
+    setNewProjectForm({ name: '', latitude: '', longitude: '' });
+    setShowCreateModal(true);
+  };
 
-    const lat = prompt('Enter latitude:');
-    const lng = prompt('Enter longitude:');
-    if (!lat || !lng) return;
+  const handleCreateProject = async () => {
+    if (!newProjectForm.name || !newProjectForm.latitude || !newProjectForm.longitude) {
+      setError('Please fill in all fields');
+      return;
+    }
 
     const newProject = {
       id: Date.now().toString(),
-      name: projectName,
-      coordinates: { latitude: parseFloat(lat), longitude: parseFloat(lng) },
+      name: newProjectForm.name,
+      coordinates: { 
+        latitude: parseFloat(newProjectForm.latitude), 
+        longitude: parseFloat(newProjectForm.longitude) 
+      },
       created: new Date().toISOString(),
       lastModified: new Date().toISOString(),
       layers: {},
@@ -131,6 +137,7 @@ function App() {
 
     const updatedProjects = [...projects, newProject];
     saveProjects(updatedProjects);
+    setShowCreateModal(false);
     openProject(newProject);
   };
 
