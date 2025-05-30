@@ -99,6 +99,7 @@ function App() {
     latitude: '',
     longitude: ''
   });
+  const [refreshing, setRefreshing] = useState(false);
   const mapRef = useRef();
 
   // Initialize projects from localStorage
