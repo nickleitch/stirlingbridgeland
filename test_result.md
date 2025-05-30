@@ -169,6 +169,30 @@ Stirling Bridge LandDev App - Complete Development Summary: Professional-grade l
           agent: "testing"
           comment: "MongoDB integration fully functional. Successfully tested database connection, project creation, project retrieval (both list and individual), file downloads from database-stored projects, data persistence across simulated server restarts, and proper error handling for non-existent projects."
 
+  - task: "Service Layer Refactoring"
+    implemented: true
+    working: true
+    file: "/app/backend/services/*.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "Refactored service layer architecture successfully tested. The backend now uses a well-structured service layer with ExternalAPIManager for CSG and SANBI API calls, DatabaseService for MongoDB operations, ValidationService with Pydantic models, and centralized configuration management. All core functionality is working correctly after the refactoring."
+
+  - task: "Health Check Endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "Health check endpoint (/api/health) is working correctly. Returns service status, name, version, and database connection status."
+
 ## frontend:
   - task: "Project Management System"
     implemented: true
