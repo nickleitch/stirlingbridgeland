@@ -171,6 +171,7 @@ class LayerConfiguration:
         "Holdings": "#FFFF00",           # Yellow
         "Public Places": "#FF00FF",      # Magenta
         "Contours": "#8B4513",           # Brown
+        "Elevation Data": "#CD853F",     # Peru (brownish-orange for elevation)
         "Water Bodies": "#00BFFF",       # Deep Sky Blue
         "Environmental Constraints": "#228B22",  # Forest Green
         "Roads": "#FF6347",              # Tomato Red
