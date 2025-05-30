@@ -692,6 +692,14 @@ async def get_project_data(project_id: str):
         layers=project_data.data.get("response", {}).get("layers")
     )
 
+@app.get("/api/debug/sanbi-services")
+async def debug_sanbi_services():
+    """Debug endpoint to check SANBI services configuration"""
+    return {
+        "services": list(SANBI_SERVICES.keys()),
+        "full_config": SANBI_SERVICES
+    }
+
 @app.get("/api/boundary-types")
 async def get_available_boundary_types():
     """Get list of available boundary types that can be queried"""
