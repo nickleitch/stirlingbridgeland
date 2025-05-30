@@ -234,7 +234,7 @@ async def query_additional_boundaries(latitude: float, longitude: float):
         if not protected_areas_found:
             try:
                 print(f"Querying national protected areas for {latitude}, {longitude}")
-                national_protected_data = await query_sanbi_bgis(latitude, longitude, "conservation_national", 6)
+                national_protected_data = await query_sanbi_bgis(latitude, longitude, "conservation_national", 0)
                 print(f"National protected data: {national_protected_data}")
                 if national_protected_data.get("results"):
                     for result in national_protected_data["results"]:
