@@ -27,6 +27,20 @@ const ProjectList = memo(({ onProjectSelect, onCreateProject }) => {
         <EmptyState onCreateProject={onCreateProject} />
       ) : (
         <div className="max-w-7xl mx-auto space-y-4">
+          {/* Small New Project Button above projects */}
+          <div className="flex justify-end mb-6">
+            <button
+              onClick={onCreateProject}
+              className="bg-teal-600 text-white px-4 py-2 rounded-md font-medium hover:bg-teal-700 transition-colors flex items-center space-x-2 text-sm"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              <span>New Project</span>
+            </button>
+          </div>
+
+          {/* Project Cards */}
           {projects.map(project => (
             <ProjectProgressSummaryForList
               key={project.id}
