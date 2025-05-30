@@ -297,6 +297,7 @@ function App() {
       case 'roads_existing':
         return result.boundaries.filter(boundary => boundary.layer_type === 'Roads');
       case 'topography_basic':
+        return result.boundaries.filter(boundary => boundary.layer_type === 'Contours');
       case 'contours_major':
         return result.boundaries.filter(boundary => boundary.layer_type === 'Contours');
       case 'water_bodies':
