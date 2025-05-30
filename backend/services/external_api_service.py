@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 import os
 from abc import ABC, abstractmethod
 import logging
-from .open_topo_data_service import OpenTopoDataService
+
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
