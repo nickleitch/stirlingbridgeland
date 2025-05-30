@@ -1047,33 +1047,33 @@ class StirlingBridgeAPITester:
             }
         }
 
-def test_statistics(self):
-    """Test the statistics endpoint"""
-    success, response = self.run_test(
-        "Statistics",
-        "GET",
-        "api/statistics",
-        200
-    )
-    self.test_results["statistics"] = {"success": success, "response": response}
-    
-    if success:
-        print(f"  - Application name: {response.get('application', {}).get('name')}")
-        print(f"  - Application version: {response.get('application', {}).get('version')}")
-        print(f"  - Environment: {response.get('application', {}).get('environment')}")
+    def test_statistics(self):
+        """Test the statistics endpoint"""
+        success, response = self.run_test(
+            "Statistics",
+            "GET",
+            "api/statistics",
+            200
+        )
+        self.test_results["statistics"] = {"success": success, "response": response}
         
-        # Check database stats
-        db_stats = response.get('database', {})
-        print(f"  - Database name: {db_stats.get('database_name')}")
-        print(f"  - Total projects: {db_stats.get('total_projects')}")
+        if success:
+            print(f"  - Application name: {response.get('application', {}).get('name')}")
+            print(f"  - Application version: {response.get('application', {}).get('version')}")
+            print(f"  - Environment: {response.get('application', {}).get('environment')}")
+            
+            # Check database stats
+            db_stats = response.get('database', {})
+            print(f"  - Database name: {db_stats.get('database_name')}")
+            print(f"  - Total projects: {db_stats.get('total_projects')}")
+            
+            # Check configuration
+            config = response.get('configuration', {})
+            print(f"  - ArcGIS configured: {config.get('arcgis_configured')}")
+            print(f"  - AfriGIS configured: {config.get('afrigis_configured')}")
+            print(f"  - Cache TTL: {config.get('cache_ttl_seconds')} seconds")
         
-        # Check configuration
-        config = response.get('configuration', {})
-        print(f"  - ArcGIS configured: {config.get('arcgis_configured')}")
-        print(f"  - AfriGIS configured: {config.get('afrigis_configured')}")
-        print(f"  - Cache TTL: {config.get('cache_ttl_seconds')} seconds")
-    
-    return success, response
+        return success, response
 
 def main():
     # Read the backend URL from the frontend .env file
