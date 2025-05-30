@@ -519,7 +519,7 @@ function App() {
                 {expandedSections[sectionName] && (
                   <div className="pb-2">
                     {section.layers.map(layer => {
-                      const hasData = getBoundariesForLayer(layer.type).length > 0;
+                      const hasData = getBoundariesForLayer(layer.id).length > 0;
                       const isEnabled = layerStates[layer.id];
                       
                       return (
@@ -547,7 +547,7 @@ function App() {
                           </div>
                           {hasData && (
                             <div className="mt-2 text-xs text-gray-600">
-                              {getBoundariesForLayer(layer.type).length} features available
+                              {getBoundariesForLayer(layer.id).length} features available
                             </div>
                           )}
                         </div>
