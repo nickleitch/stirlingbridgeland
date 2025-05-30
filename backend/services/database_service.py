@@ -271,6 +271,34 @@ class DatabaseService:
                 "error_type": "database_error"
             }
     
+    async def delete_all_projects(self) -> Dict[str, Any]:
+        """Delete all projects from the database"""
+        if not self.connected:
+            raise ConnectionError("Database not connected")
+        
+        try:
+            # Get count before deletion
+            total_count = await self.projects_collection.count_documents({})
+            
+            # Delete all projects
+            result = await self.projects_collection.delete_many({})
+            
+            logger.info(f"All projects deleted successfully: {result.deleted_count} projects removed")
+            return {
+                "success": True,
+                "deleted_count": result.deleted_count,
+                "total_projects_before": total_count
+            }
+            
+        except Exception as e:
+            error_msg = f"Failed to delete all projects: {str(e)}"
+            logger.error(error_msg)
+            return {
+                "success": False,
+                "error": error_msg,
+                "error_type": "database_error"
+            }
+    
     async def get_project_statistics(self) -> Dict[str, Any]:
         """Get database statistics"""
         if not self.connected:
