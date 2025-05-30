@@ -738,6 +738,41 @@ async def debug_sanbi_services():
         "full_config": SANBI_SERVICES
     }
 
+@app.get("/api/test/arcgis")
+async def test_arcgis_connection():
+    """Test ArcGIS API connection and return service status"""
+    try:
+        connection_status = await arcgis_service.test_connection()
+        return {
+            "arcgis_status": connection_status,
+            "available_services": arcgis_service.get_available_services()
+        }
+    except Exception as e:
+        return {
+            "error": str(e),
+            "status": "failed"
+        }
+
+@app.get("/api/arcgis/land-dev/{latitude}/{longitude}")
+async def get_arcgis_land_development_data(latitude: float, longitude: float):
+    """Get ArcGIS land development data for a specific location"""
+    try:
+        # Get comprehensive land development data from ArcGIS
+        data = await arcgis_service.get_land_development_data(latitude, longitude)
+        
+        return {
+            "status": "success",
+            "location": {"latitude": latitude, "longitude": longitude},
+            "arcgis_data": data,
+            "total_features": data.get("total_features", 0)
+        }
+    except Exception as e:
+        return {
+            "status": "error", 
+            "error": str(e),
+            "location": {"latitude": latitude, "longitude": longitude}
+        }
+
 @app.get("/api/download-cad/{project_id}")
 async def download_project_cad_files(project_id: str):
     """Download professional CAD layers as ZIP package"""
