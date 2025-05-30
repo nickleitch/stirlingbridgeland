@@ -215,6 +215,7 @@ function App() {
       // Auto-enable base data layers that have data
       const newLayerStates = { ...layerStates };
       if (data.boundaries) {
+        console.log('Processing boundaries for layer mapping:', data.boundaries.length);
         data.boundaries.forEach(boundary => {
           const layerType = boundary.layer_type;
           let layerId = null;
@@ -226,34 +227,44 @@ function App() {
             case 'Holdings':
             case 'Public Places':
               layerId = 'property_boundaries';
+              console.log(`Mapping ${layerType} to property_boundaries`);
               break;
             case 'Roads':
               layerId = 'roads_existing';
+              console.log(`Mapping ${layerType} to roads_existing`);
               break;
             case 'Contours':
               layerId = 'topography_basic';
+              console.log(`Mapping ${layerType} to topography_basic`);
               break;
             case 'Water Bodies':
               layerId = 'water_bodies';
+              console.log(`Mapping ${layerType} to water_bodies`);
               break;
             case 'Environmental Constraints':
               // Keep this in Environmental Screening section
               layerId = Object.values(LAYER_SECTIONS).find(section => 
                 section.layers.some(layer => layer.type === layerType)
               )?.layers.find(layer => layer.type === layerType)?.id;
+              console.log(`Mapping ${layerType} to environmental section: ${layerId}`);
               break;
             default:
               // For other layer types, find in any section
               layerId = Object.values(LAYER_SECTIONS).find(section => 
                 section.layers.some(layer => layer.type === layerType)
               )?.layers.find(layer => layer.type === layerType)?.id;
+              console.log(`Mapping ${layerType} to default section: ${layerId}`);
           }
           
           if (layerId) {
             newLayerStates[layerId] = true;
+            console.log(`Enabled layer: ${layerId}`);
+          } else {
+            console.log(`No layer mapping found for: ${layerType}`);
           }
         });
       }
+      console.log('Final layer states:', newLayerStates);
       setLayerStates(newLayerStates);
 
     } catch (err) {
