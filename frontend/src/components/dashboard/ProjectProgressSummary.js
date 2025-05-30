@@ -132,7 +132,7 @@ const ProjectProgressSummary = memo(() => {
           </div>
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {sectionProgress.map((step, index) => (
             <div key={step.name} className="flex flex-col items-center">
               <ProgressCircle
