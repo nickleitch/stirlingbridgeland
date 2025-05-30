@@ -708,14 +708,16 @@ async def get_project_data(project_id: str):
         raise HTTPException(status_code=404, detail="Project not found")
     
     project_data = ProjectInDB(**project_doc)
+    response_data = project_data.data.get("response", {})
+    
     return ProjectResponse(
         id=project_data.project_id,
         name=project_data.name,
         coordinates=project_data.coordinates,
         created=project_data.created,
         lastModified=project_data.last_modified,
-        data=project_data.data.get("response", {}).get("data"),
-        layers=project_data.data.get("response", {}).get("layers")
+        data=response_data.get("boundaries", []),  # Return the boundaries data
+        layers={}  # For future use
     )
 
 @app.get("/api/debug/sanbi-services")
