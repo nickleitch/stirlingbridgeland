@@ -120,7 +120,7 @@ const APIManagementPage = () => {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">API Management</h1>
           <p className="mt-2 text-gray-600">
-            Monitor and configure external API integrations for the Stirling Bridge LandDev Platform
+            Monitor and configure external API integrations for the Landstream Urban Planning & Development Platform
           </p>
         </div>
 
