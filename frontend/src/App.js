@@ -162,7 +162,6 @@ function App() {
   };
 
   // Function to handle layer refresh
-  };
 
   // Function to create a new project
   const createNewProject = () => {
