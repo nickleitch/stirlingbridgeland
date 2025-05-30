@@ -1049,7 +1049,7 @@ class StirlingBridgeAPITester:
 
 def main():
     # Use the public endpoint from the .env file
-    backend_url = "https://413fb982-09b2-44b2-8258-7bfba70e9345.preview.emergentagent.com"
+    backend_url = "https://86a77ba3-9257-494f-8091-f8593f088bf7.preview.emergentagent.com"
     
     print(f"Testing Stirling Bridge LandDev API at: {backend_url}")
     print(f"\n{'='*80}")
