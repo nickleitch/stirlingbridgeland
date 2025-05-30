@@ -528,6 +528,210 @@ class BackendTester:
         except Exception as e:
             self.log_test("Update API Configuration Endpoint", False, f"Error: {str(e)}")
             return False
+    
+    # Open Topo Data API Tests
+    
+    async def test_elevation_point(self, latitude: float, longitude: float, dataset: str = "srtm30m"):
+        """Test the elevation point endpoint"""
+        start_time = time.time()
+        try:
+            response = await self.client.get(f"{self.base_url}/elevation/{latitude}/{longitude}?dataset={dataset}")
+            response_time = time.time() - start_time
+            
+            if response.status_code == 200:
+                data = response.json()
+                elevation_data = data.get("elevation_data", {})
+                elevation = elevation_data.get("elevation") if elevation_data else None
+                
+                details = f"Coordinates: {latitude}, {longitude}, Dataset: {dataset}, Elevation: {elevation}m"
+                self.log_test("Elevation Point Endpoint", True, details, response_time)
+                return True
+            else:
+                self.log_test("Elevation Point Endpoint", False, 
+                             f"Unexpected status code: {response.status_code}, Response: {response.text}", response_time)
+                return False
+        except Exception as e:
+            self.log_test("Elevation Point Endpoint", False, f"Error: {str(e)}")
+            return False
+    
+    async def test_elevation_datasets(self):
+        """Test the available elevation datasets endpoint"""
+        start_time = time.time()
+        try:
+            response = await self.client.get(f"{self.base_url}/elevation/datasets")
+            response_time = time.time() - start_time
+            
+            if response.status_code == 200:
+                data = response.json()
+                datasets = data.get("available_datasets", [])
+                default = data.get("default_dataset")
+                
+                details = f"Available datasets: {', '.join(datasets)}, Default: {default}"
+                self.log_test("Elevation Datasets Endpoint", True, details, response_time)
+                return True
+            else:
+                self.log_test("Elevation Datasets Endpoint", False, 
+                             f"Unexpected status code: {response.status_code}, Response: {response.text}", response_time)
+                return False
+        except Exception as e:
+            self.log_test("Elevation Datasets Endpoint", False, f"Error: {str(e)}")
+            return False
+    
+    async def test_external_services_status(self):
+        """Test the external services status endpoint"""
+        start_time = time.time()
+        try:
+            response = await self.client.get(f"{self.base_url}/external-services/status")
+            response_time = time.time() - start_time
+            
+            if response.status_code == 200:
+                data = response.json()
+                services = data.get("external_services", {})
+                open_topo_service = services.get("open_topo_service", {})
+                
+                details = f"Open Topo Data service status: {open_topo_service.get('status')}"
+                if open_topo_service.get("daily_requests_used") is not None:
+                    details += f", Requests used: {open_topo_service.get('daily_requests_used')}/{open_topo_service.get('daily_requests_remaining')}"
+                
+                self.log_test("External Services Status Endpoint", True, details, response_time)
+                return True
+            else:
+                self.log_test("External Services Status Endpoint", False, 
+                             f"Unexpected status code: {response.status_code}, Response: {response.text}", response_time)
+                return False
+        except Exception as e:
+            self.log_test("External Services Status Endpoint", False, f"Error: {str(e)}")
+            return False
+    
+    async def test_elevation_grid(self, latitude: float, longitude: float, grid_size_km: float = 1.0, grid_points: int = 5):
+        """Test the elevation grid generation endpoint"""
+        start_time = time.time()
+        try:
+            payload = {
+                "latitude": latitude,
+                "longitude": longitude,
+                "project_name": "Elevation Grid Test",
+                "grid_size_km": grid_size_km,
+                "grid_points": grid_points
+            }
+            
+            response = await self.client.post(f"{self.base_url}/elevation/grid", json=payload)
+            response_time = time.time() - start_time
+            
+            if response.status_code == 200:
+                data = response.json()
+                grid = data.get("elevation_grid", {})
+                boundaries = grid.get("boundaries", [])
+                
+                details = f"Grid size: {grid_size_km}km, Points: {grid_points}x{grid_points}, Generated {len(boundaries)} elevation points"
+                if grid.get("elevation_stats"):
+                    stats = grid.get("elevation_stats")
+                    details += f", Min: {stats.get('min_elevation')}m, Max: {stats.get('max_elevation')}m, Range: {stats.get('elevation_range')}m"
+                
+                self.log_test("Elevation Grid Endpoint", True, details, response_time)
+                return True
+            else:
+                self.log_test("Elevation Grid Endpoint", False, 
+                             f"Unexpected status code: {response.status_code}, Response: {response.text}", response_time)
+                return False
+        except Exception as e:
+            self.log_test("Elevation Grid Endpoint", False, f"Error: {str(e)}")
+            return False
+    
+    async def test_rate_limiting(self):
+        """Test rate limiting for Open Topo Data API (1 request/second)"""
+        start_time = time.time()
+        try:
+            # Make 3 rapid requests to test rate limiting
+            results = []
+            for i in range(3):
+                response = await self.client.get(f"{self.base_url}/elevation/{SOUTH_AFRICA_COORDS['latitude']}/{SOUTH_AFRICA_COORDS['longitude']}")
+                results.append({
+                    "status_code": response.status_code,
+                    "time": time.time()
+                })
+            
+            response_time = time.time() - start_time
+            
+            # Check if requests were properly rate limited (should take at least 2 seconds for 3 requests)
+            if response_time >= 2.0:
+                details = f"3 requests took {response_time:.2f}s (expected ≥2.0s), indicating proper rate limiting"
+                self.log_test("Open Topo Data Rate Limiting", True, details)
+                return True
+            else:
+                details = f"3 requests took only {response_time:.2f}s (expected ≥2.0s), rate limiting may not be working"
+                self.log_test("Open Topo Data Rate Limiting", False, details)
+                return False
+        except Exception as e:
+            self.log_test("Open Topo Data Rate Limiting", False, f"Error: {str(e)}")
+            return False
+    
+    async def test_enhanced_land_identification(self, latitude: float, longitude: float, project_name: str):
+        """Test the enhanced land identification with elevation data"""
+        start_time = time.time()
+        try:
+            payload = {
+                "latitude": latitude,
+                "longitude": longitude,
+                "project_name": project_name
+            }
+            
+            response = await self.client.post(f"{self.base_url}/identify-land", json=payload)
+            response_time = time.time() - start_time
+            
+            if response.status_code == 200:
+                data = response.json()
+                self.created_project_id = data.get("project_id")
+                boundaries = data.get("boundaries", [])
+                
+                # Check for elevation data in the response
+                elevation_boundaries = [b for b in boundaries if b.get("layer_type") == "Elevation Data"]
+                elevation_stats = data.get("elevation_stats")
+                
+                details = f"Project ID: {self.created_project_id}, Found {len(boundaries)} boundaries"
+                if elevation_boundaries:
+                    details += f", Including {len(elevation_boundaries)} elevation data points"
+                if elevation_stats:
+                    details += f", Elevation range: {elevation_stats.get('min_elevation')}m - {elevation_stats.get('max_elevation')}m"
+                
+                has_elevation_data = len(elevation_boundaries) > 0 or elevation_stats is not None
+                
+                if has_elevation_data:
+                    self.log_test("Enhanced Land Identification with Elevation Data", True, details, response_time)
+                    return True
+                else:
+                    self.log_test("Enhanced Land Identification with Elevation Data", False, 
+                                 "No elevation data found in response", response_time)
+                    return False
+            else:
+                self.log_test("Enhanced Land Identification with Elevation Data", False, 
+                             f"Unexpected status code: {response.status_code}, Response: {response.text}", response_time)
+                return False
+        except Exception as e:
+            self.log_test("Enhanced Land Identification with Elevation Data", False, f"Error: {str(e)}")
+            return False
+    
+    async def test_invalid_dataset(self):
+        """Test error handling with invalid elevation dataset"""
+        start_time = time.time()
+        try:
+            invalid_dataset = "invalid_dataset_name"
+            response = await self.client.get(
+                f"{self.base_url}/elevation/{SOUTH_AFRICA_COORDS['latitude']}/{SOUTH_AFRICA_COORDS['longitude']}?dataset={invalid_dataset}"
+            )
+            response_time = time.time() - start_time
+            
+            if response.status_code in [400, 404, 422, 500]:
+                details = f"Status code: {response.status_code}, Error message: {response.json().get('detail')}"
+                self.log_test("Error Handling - Invalid Dataset", True, details, response_time)
+                return True
+            else:
+                self.log_test("Error Handling - Invalid Dataset", False, 
+                             f"Unexpected status code: {response.status_code}, Response: {response.text}", response_time)
+                return False
+        except Exception as e:
+            self.log_test("Error Handling - Invalid Dataset", False, f"Error: {str(e)}")
+            return False
             
     def print_summary(self):
         """Print a summary of all test results"""
