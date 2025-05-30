@@ -771,6 +771,24 @@ function App() {
             )}
           </button>
           
+          <button
+            onClick={handleDownloadCAD}
+            disabled={downloadingCAD || loading}
+            className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {downloadingCAD ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                <span className="text-sm">Downloading...</span>
+              </>
+            ) : (
+              <>
+                <span className="text-sm">📐</span>
+                <span className="text-sm">Download CAD</span>
+              </>
+            )}
+          </button>
+          
           <div className="border-l border-gray-300 pl-4">
             <span className="text-sm text-gray-600">
               📍 {currentProject?.coordinates.latitude.toFixed(4)}, {currentProject?.coordinates.longitude.toFixed(4)}
