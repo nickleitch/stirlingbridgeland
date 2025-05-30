@@ -268,8 +268,8 @@ export const ProjectProvider = ({ children }) => {
 
   const clearAllLocalData = () => {
     // Clear all localStorage data and reset state
-    localStorage.removeItem('projects');
-    localStorage.removeItem('stirling_projects'); // Legacy key
+    localStorage.removeItem('stirling_projects'); // Main key
+    localStorage.removeItem('projects'); // Legacy key
     dispatch({ type: PROJECT_ACTIONS.SET_PROJECTS, payload: [] });
     dispatch({ type: PROJECT_ACTIONS.SET_CURRENT_PROJECT, payload: null });
   };
