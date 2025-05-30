@@ -295,7 +295,96 @@ function App() {
     setError('');
   };
 
-  // Get available boundaries for a layer type
+  // Helper function to check if a point is inside a polygon (ray casting algorithm)
+  const isPointInPolygon = (point, polygon) => {
+    const [x, y] = point;
+    let inside = false;
+    
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      const [xi, yi] = polygon[i];
+      const [xj, yj] = polygon[j];
+      
+      if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) {
+        inside = !inside;
+      }
+    }
+    
+    return inside;
+  };
+
+  // Helper function to check if coordinates are inside a boundary
+  const isCoordinateInBoundary = (latitude, longitude, boundary) => {
+    if (!boundary.geometry || !boundary.geometry.rings || boundary.geometry.rings.length === 0) {
+      return false;
+    }
+    
+    // Check the outer ring (first ring is usually the outer boundary)
+    const outerRing = boundary.geometry.rings[0];
+    if (!outerRing || outerRing.length < 3) return false;
+    
+    // Convert to [lat, lng] format and check if point is inside
+    const polygonPoints = outerRing.map(coord => [coord[1], coord[0]]); // Convert [lng, lat] to [lat, lng]
+    return isPointInPolygon([latitude, longitude], polygonPoints);
+  };
+
+  // Filter boundaries to show only relevant ones for the search coordinates
+  const getRelevantBoundaries = (boundaries, searchLat, searchLng) => {
+    if (!boundaries || boundaries.length === 0) return [];
+    
+    // First, find boundaries that contain the search point
+    const containingBoundaries = boundaries.filter(boundary => 
+      isCoordinateInBoundary(searchLat, searchLng, boundary)
+    );
+    
+    // If we found boundaries containing the point, return only those
+    if (containingBoundaries.length > 0) {
+      console.log(`Found ${containingBoundaries.length} boundaries containing search point:`, 
+        containingBoundaries.map(b => `${b.layer_type}: ${b.layer_name}`));
+      return containingBoundaries;
+    }
+    
+    // If no boundaries contain the point, find the closest one(s)
+    console.log('No boundaries contain search point, finding closest boundaries');
+    
+    // Calculate distance from search point to each boundary's centroid
+    const boundariesWithDistance = boundaries.map(boundary => {
+      if (!boundary.geometry || !boundary.geometry.rings || boundary.geometry.rings.length === 0) {
+        return { ...boundary, distance: Infinity };
+      }
+      
+      const ring = boundary.geometry.rings[0];
+      if (!ring || ring.length === 0) return { ...boundary, distance: Infinity };
+      
+      // Calculate centroid of the boundary
+      let centroidLng = 0, centroidLat = 0;
+      ring.forEach(coord => {
+        centroidLng += coord[0];
+        centroidLat += coord[1];
+      });
+      centroidLng /= ring.length;
+      centroidLat /= ring.length;
+      
+      // Calculate distance (simple Euclidean distance for small areas)
+      const distance = Math.sqrt(
+        Math.pow(searchLat - centroidLat, 2) + Math.pow(searchLng - centroidLng, 2)
+      );
+      
+      return { ...boundary, distance };
+    });
+    
+    // Sort by distance and return the closest boundary
+    const sortedBoundaries = boundariesWithDistance
+      .filter(b => b.distance !== Infinity)
+      .sort((a, b) => a.distance - b.distance);
+    
+    const closestBoundary = sortedBoundaries.length > 0 ? [sortedBoundaries[0]] : [];
+    
+    if (closestBoundary.length > 0) {
+      console.log(`Selected closest boundary: ${closestBoundary[0].layer_type}: ${closestBoundary[0].layer_name}`);
+    }
+    
+    return closestBoundary;
+  };
   const getBoundariesForLayer = (layerId) => {
     if (!result?.boundaries) return [];
     
