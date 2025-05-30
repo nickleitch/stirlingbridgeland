@@ -123,7 +123,7 @@ export const ProjectProvider = ({ children }) => {
       dispatch({ type: PROJECT_ACTIONS.SET_LOADING, payload: true });
       dispatch({ type: PROJECT_ACTIONS.CLEAR_ERROR });
 
-      const response = await projectAPI.getProjects();
+      const response = await projectAPI.listProjects();
       
       if (response.success) {
         const dbProjects = response.data.projects || [];
