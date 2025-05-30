@@ -340,11 +340,21 @@ function App() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center py-6">
               <div className="flex items-center">
-                <div className="w-12 h-12 bg-gradient-to-r from-green-600 to-blue-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-xl">SB</span>
+                <div className="flex flex-col items-center">
+                  {/* Bridge arch design */}
+                  <div className="mb-2">
+                    <svg width="120" height="24" viewBox="0 0 120 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M10 22C10 22 30 2 60 2C90 2 110 22 110 22" stroke="#6B7280" strokeWidth="3" strokeLinecap="round" fill="none"/>
+                    </svg>
+                  </div>
+                  {/* Company name */}
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-600 tracking-wider">STIRLING BRIDGE</div>
+                    <div className="text-sm font-medium text-gray-500 tracking-widest mt-1">DEVELOPMENTS</div>
+                  </div>
                 </div>
-                <div className="ml-4">
-                  <h1 className="text-2xl font-bold text-gray-900">Stirling Bridge LandDev</h1>
+                <div className="ml-6 border-l border-gray-300 pl-6">
+                  <h1 className="text-xl font-bold text-gray-900">LandDev Platform</h1>
                   <p className="text-sm text-gray-500">Project Management Dashboard</p>
                 </div>
               </div>
