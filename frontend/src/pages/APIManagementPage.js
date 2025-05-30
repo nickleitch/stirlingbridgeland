@@ -204,7 +204,7 @@ const APIManagementPage = () => {
             <div className="prose max-w-none">
               <h3 className="text-lg font-medium text-gray-900 mb-3">Getting Started</h3>
               <p className="text-gray-600 mb-4">
-                The Stirling Bridge LandDev Platform integrates with several external APIs to provide comprehensive 
+                The Landstream Urban Planning & Development Platform integrates with several external APIs to provide comprehensive 
                 land development data. Some APIs require configuration while others work out of the box.
               </p>
               
