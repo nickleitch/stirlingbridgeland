@@ -773,83 +773,97 @@ function App() {
               </Marker>
             )}
 
-            {/* Layer boundaries */}
-            {result?.boundaries?.map((boundary, index) => {
-              // Check if this layer is enabled based on new mapping
-              let layerId = null;
+            {/* Layer boundaries - show only relevant boundaries */}
+            {(() => {
+              if (!result?.boundaries || !currentProject) return null;
               
-              switch(boundary.layer_type) {
-                case 'Farm Portions':
-                case 'Erven':
-                case 'Holdings':
-                case 'Public Places':
-                  layerId = 'property_boundaries';
-                  break;
-                case 'Roads':
-                  layerId = 'roads_existing';
-                  break;
-                case 'Contours':
-                  layerId = layerStates['topography_basic'] ? 'topography_basic' : 
-                           layerStates['contours_major'] ? 'contours_major' : null;
-                  break;
-                case 'Water Bodies':
-                  layerId = 'water_bodies';
-                  break;
-                case 'Environmental Constraints':
-                  layerId = 'environmental_constraints';
-                  break;
-                default:
-                  // For other layer types, find in any section
-                  layerId = Object.values(LAYER_SECTIONS).find(section => 
-                    section.layers.some(layer => layer.type === boundary.layer_type)
-                  )?.layers.find(layer => layer.type === boundary.layer_type)?.id;
-              }
-              
-              // Debug logging
-              console.log(`Boundary ${index}: type=${boundary.layer_type}, layerId=${layerId}, enabled=${layerStates[layerId]}`);
-              
-              if (!layerId || !layerStates[layerId]) {
-                console.log(`Skipping boundary ${index} - layer not enabled`);
-                return null;
-              }
-
-              const polygonCoords = convertGeometryToLeaflet(boundary.geometry);
-              
-              // Get color from the specific layer or use the boundary type mapping
-              let color = "#000000";
-              if (layerId === 'property_boundaries') {
-                color = "#FF4500"; // Orange red for property boundaries
-              } else {
-                const layer = Object.values(LAYER_SECTIONS).find(section => 
-                  section.layers.some(l => l.id === layerId)
-                )?.layers.find(l => l.id === layerId);
-                color = layer?.color || "#000000";
-              }
-
-              if (polygonCoords.length === 0) return null;
-
-              return (
-                <Polygon
-                  key={index}
-                  positions={polygonCoords}
-                  pathOptions={{
-                    color: color,
-                    weight: 2,
-                    opacity: 0.8,
-                    fillColor: color,
-                    fillOpacity: 0.2
-                  }}
-                >
-                  <Popup>
-                    <div>
-                      <strong>{boundary.layer_name}</strong><br/>
-                      <em>Type: {boundary.layer_type}</em><br/>
-                      <small>Source: {boundary.source_api}</small>
-                    </div>
-                  </Popup>
-                </Polygon>
+              // Get only the relevant boundaries for the search coordinates
+              const relevantBoundaries = getRelevantBoundaries(
+                result.boundaries,
+                currentProject.coordinates.latitude,
+                currentProject.coordinates.longitude
               );
-            })}
+              
+              console.log(`Rendering ${relevantBoundaries.length} relevant boundaries out of ${result.boundaries.length} total`);
+              
+              return relevantBoundaries.map((boundary, index) => {
+                // Check if this layer is enabled based on new mapping
+                let layerId = null;
+                
+                switch(boundary.layer_type) {
+                  case 'Farm Portions':
+                  case 'Erven':
+                  case 'Holdings':
+                  case 'Public Places':
+                    layerId = 'property_boundaries';
+                    break;
+                  case 'Roads':
+                    layerId = 'roads_existing';
+                    break;
+                  case 'Contours':
+                    layerId = layerStates['topography_basic'] ? 'topography_basic' : 
+                             layerStates['contours_major'] ? 'contours_major' : null;
+                    break;
+                  case 'Water Bodies':
+                    layerId = 'water_bodies';
+                    break;
+                  case 'Environmental Constraints':
+                    layerId = 'environmental_constraints';
+                    break;
+                  default:
+                    // For other layer types, find in any section
+                    layerId = Object.values(LAYER_SECTIONS).find(section => 
+                      section.layers.some(layer => layer.type === boundary.layer_type)
+                    )?.layers.find(layer => layer.type === boundary.layer_type)?.id;
+                }
+                
+                // Debug logging
+                console.log(`Relevant boundary ${index}: type=${boundary.layer_type}, layerId=${layerId}, enabled=${layerStates[layerId]}`);
+                
+                if (!layerId || !layerStates[layerId]) {
+                  console.log(`Skipping relevant boundary ${index} - layer not enabled`);
+                  return null;
+                }
+
+                const polygonCoords = convertGeometryToLeaflet(boundary.geometry);
+                
+                // Get color from the specific layer or use the boundary type mapping
+                let color = "#000000";
+                if (layerId === 'property_boundaries') {
+                  color = "#FF4500"; // Orange red for property boundaries
+                } else {
+                  const layer = Object.values(LAYER_SECTIONS).find(section => 
+                    section.layers.some(l => l.id === layerId)
+                  )?.layers.find(l => l.id === layerId);
+                  color = layer?.color || "#000000";
+                }
+
+                if (polygonCoords.length === 0) return null;
+
+                return (
+                  <Polygon
+                    key={`relevant-${index}`}
+                    positions={polygonCoords}
+                    pathOptions={{
+                      color: color,
+                      weight: 3, // Slightly thicker for better visibility
+                      opacity: 0.9,
+                      fillColor: color,
+                      fillOpacity: 0.3
+                    }}
+                  >
+                    <Popup>
+                      <div>
+                        <strong>{boundary.layer_name}</strong><br/>
+                        <em>Type: {boundary.layer_type}</em><br/>
+                        <small>Source: {boundary.source_api}</small><br/>
+                        <small style={{color: '#22c55e'}}>✓ Contains search coordinates</small>
+                      </div>
+                    </Popup>
+                  </Polygon>
+                );
+              });
+            })()}
           </MapContainer>
         </div>
       </div>
