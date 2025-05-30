@@ -374,7 +374,7 @@ class ArcGISAPIService:
                 for key, basemap in self.basemap_services.items()
             },
             "total_services": len(self.land_dev_services) + len(self.basemap_services),
-            "api_key_configured": bool(self.api_key)
+            "oauth2_configured": bool(self.client_id and self.client_secret)
         }
     
     async def get_land_development_data(self, latitude: float, longitude: float, 
