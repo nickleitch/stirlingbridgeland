@@ -454,13 +454,27 @@ async def identify_land(coordinate_input: CoordinateInput):
             created_at=datetime.now().isoformat()
         )
         
-        # Store project data for download
-        projects_storage[project_id] = {
-            "response": response,
-            "dwg_data": dwg_data,
-            "project_name": coordinate_input.project_name,
-            "raw_boundaries": boundaries
-        }
+        # Store project data in MongoDB
+        project_data = ProjectInDB(
+            project_id=project_id,
+            name=coordinate_input.project_name,
+            coordinates={
+                "latitude": coordinate_input.latitude,
+                "longitude": coordinate_input.longitude
+            },
+            created=datetime.now().isoformat(),
+            last_modified=datetime.now().isoformat(),
+            data={
+                "response": response.dict(),
+                "dwg_data": dwg_data,
+                "raw_boundaries": [b.dict() for b in boundaries]
+            }
+        )
+        
+        try:
+            await database[PROJECTS_COLLECTION].insert_one(project_data.dict())
+        except DuplicateKeyError:
+            raise HTTPException(status_code=400, detail="Project ID already exists")
         
         return response
         
@@ -471,13 +485,15 @@ async def identify_land(coordinate_input: CoordinateInput):
 async def download_files(project_id: str):
     """Generate and download a ZIP file containing all project data"""
     try:
-        if project_id not in projects_storage:
+        # Get project from MongoDB
+        project_doc = await database[PROJECTS_COLLECTION].find_one({"project_id": project_id})
+        if not project_doc:
             raise HTTPException(status_code=404, detail="Project not found")
         
-        project_data = projects_storage[project_id]
-        response_data = project_data["response"]
-        dwg_data = project_data["dwg_data"]
-        project_name = project_data["project_name"]
+        project_data = ProjectInDB(**project_doc)
+        response_data = project_data.data["response"]
+        dwg_data = project_data.data["dwg_data"]
+        project_name = project_data.name
         
         # Create a ZIP file in memory
         zip_buffer = io.BytesIO()
@@ -487,10 +503,10 @@ async def download_files(project_id: str):
             project_summary = {
                 "project_name": project_name,
                 "project_id": project_id,
-                "coordinates": response_data.coordinates,
-                "status": response_data.status,
-                "created_at": response_data.created_at,
-                "total_boundaries": len(response_data.boundaries)
+                "coordinates": response_data["coordinates"],
+                "status": response_data["status"],
+                "created_at": response_data["created_at"],
+                "total_boundaries": len(response_data["boundaries"])
             }
             zip_file.writestr(
                 f"{project_name.replace(' ', '_')}_summary.json",
@@ -505,13 +521,13 @@ async def download_files(project_id: str):
             
             # Add detailed boundary data
             boundaries_data = []
-            for boundary in response_data.boundaries:
+            for boundary in response_data["boundaries"]:
                 boundaries_data.append({
-                    "layer_name": boundary.layer_name,
-                    "layer_type": boundary.layer_type,
-                    "geometry": boundary.geometry,
-                    "properties": boundary.properties,
-                    "source_api": boundary.source_api
+                    "layer_name": boundary["layer_name"],
+                    "layer_type": boundary["layer_type"],
+                    "geometry": boundary["geometry"],
+                    "properties": boundary["properties"],
+                    "source_api": boundary["source_api"]
                 })
             
             zip_file.writestr(
@@ -522,17 +538,17 @@ async def download_files(project_id: str):
             # Add coordinate reference file
             coordinates_text = f"""Land Development Project: {project_name}
 Project ID: {project_id}
-Search Coordinates: {response_data.coordinates['latitude']}, {response_data.coordinates['longitude']}
-Date Generated: {response_data.created_at}
-Total Boundary Layers Found: {len(response_data.boundaries)}
+Search Coordinates: {response_data["coordinates"]["latitude"]}, {response_data["coordinates"]["longitude"]}
+Date Generated: {response_data["created_at"]}
+Total Boundary Layers Found: {len(response_data["boundaries"])}
 
 Coordinate Reference System: WGS84 (EPSG:4326)
 Format: Decimal Degrees
 
 Boundary Types Found:
 """
-            for boundary in response_data.boundaries:
-                coordinates_text += f"- {boundary.layer_type}: {boundary.layer_name}\n"
+            for boundary in response_data["boundaries"]:
+                coordinates_text += f"- {boundary['layer_type']}: {boundary['layer_name']}\n"
             
             zip_file.writestr(
                 f"{project_name.replace(' ', '_')}_coordinates.txt",
@@ -545,7 +561,7 @@ Boundary Types Found:
 
 Project Name: {project_name}
 Project ID: {project_id}
-Generated: {response_data.created_at}
+Generated: {response_data["created_at"]}
 
 FILES INCLUDED:
 ===============
@@ -614,10 +630,20 @@ For support, contact your development team
 @app.get("/api/project/{project_id}")
 async def get_project_data(project_id: str):
     """Retrieve project data by ID"""
-    if project_id not in projects_storage:
+    project_doc = await database[PROJECTS_COLLECTION].find_one({"project_id": project_id})
+    if not project_doc:
         raise HTTPException(status_code=404, detail="Project not found")
     
-    return projects_storage[project_id]["response"]
+    project_data = ProjectInDB(**project_doc)
+    return ProjectResponse(
+        id=project_data.project_id,
+        name=project_data.name,
+        coordinates=project_data.coordinates,
+        created=project_data.created,
+        lastModified=project_data.last_modified,
+        data=project_data.data.get("response", {}).get("data"),
+        layers=project_data.data.get("response", {}).get("layers")
+    )
 
 @app.get("/api/boundary-types")
 async def get_available_boundary_types():
