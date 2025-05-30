@@ -194,8 +194,8 @@ class ArcGISAPIService:
                     "f": "json"
                 }
                 
-                if self.api_key:
-                    params["token"] = self.api_key
+                if token:
+                    params["token"] = token
                 
                 # Query the service
                 query_url = f"{service['url']}/query"
