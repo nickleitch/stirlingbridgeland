@@ -261,9 +261,22 @@ export const ProjectProvider = ({ children }) => {
         dispatch({ type: PROJECT_ACTIONS.DELETE_PROJECT, payload: projectId });
         return { success: true };
       } else {
+        // If project not found in database (404), remove it from local state anyway
+        if (response.error && response.error.includes('not found')) {
+          console.warn(`Project ${projectId} not found in database, removing from local state`);
+          dispatch({ type: PROJECT_ACTIONS.DELETE_PROJECT, payload: projectId });
+          return { success: true };
+        }
         throw new Error(response.error || 'Failed to delete project');
       }
     } catch (error) {
+      // Handle 404 errors gracefully by removing from local state
+      if (error.message && error.message.includes('not found')) {
+        console.warn(`Project ${projectId} not found in database, removing from local state`);
+        dispatch({ type: PROJECT_ACTIONS.DELETE_PROJECT, payload: projectId });
+        return { success: true };
+      }
+      
       dispatch({ type: PROJECT_ACTIONS.SET_ERROR, payload: error.message });
       return { success: false, error: error.message };
     } finally {
