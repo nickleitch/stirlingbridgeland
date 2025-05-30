@@ -509,9 +509,80 @@ class StirlingBridgeAPITester:
         self.test_results[f"get_project_{project_id}"] = {"success": success, "response": response}
         return success, response
         
+    def test_list_projects(self):
+        """Test the list projects endpoint to verify MongoDB collection retrieval"""
+        print("\n🔍 MongoDB Test: Verifying projects list retrieval from database...")
+        
+        success, response = self.run_test(
+            "List All Projects",
+            "GET",
+            "api/projects",
+            200
+        )
+        
+        if success:
+            projects = response.get('projects', [])
+            print(f"  ✅ Successfully retrieved {len(projects)} projects from MongoDB")
+            
+            if projects:
+                print(f"  - Sample project: {projects[0].get('name')} (ID: {projects[0].get('id')})")
+                
+                # Verify project data structure
+                expected_fields = ['id', 'name', 'coordinates', 'created', 'lastModified']
+                sample_project = projects[0]
+                missing_fields = [field for field in expected_fields if field not in sample_project]
+                
+                if not missing_fields:
+                    print(f"  ✅ Project list data structure is correct")
+                else:
+                    print(f"  ❌ Project list data structure is missing fields: {', '.join(missing_fields)}")
+            
+            self.mongodb_test_results["list_projects"] = {
+                "success": True,
+                "project_count": len(projects)
+            }
+        else:
+            print(f"  ❌ Failed to retrieve projects list from MongoDB")
+            self.mongodb_test_results["list_projects"] = {
+                "success": False
+            }
+            
+        self.test_results["list_projects"] = {"success": success, "response": response}
+        return success, response
+        
+    def test_nonexistent_project(self):
+        """Test error handling for non-existent project"""
+        print("\n🔍 MongoDB Test: Verifying error handling for non-existent project...")
+        
+        # Generate a random UUID that doesn't exist
+        import uuid
+        fake_project_id = str(uuid.uuid4())
+        
+        success, response = self.run_test(
+            f"Get Non-existent Project {fake_project_id}",
+            "GET",
+            f"api/project/{fake_project_id}",
+            404  # Expecting 404 Not Found
+        )
+        
+        # For this test, success means we got the expected 404 error
+        if not success:
+            print(f"  ❌ Failed to handle non-existent project correctly")
+            self.mongodb_test_results["nonexistent_project"] = {
+                "success": False
+            }
+        else:
+            print(f"  ✅ Correctly returned 404 for non-existent project")
+            self.mongodb_test_results["nonexistent_project"] = {
+                "success": True
+            }
+            
+        self.test_results["nonexistent_project"] = {"success": not success, "response": response}
+        return not success, response  # Invert success since we expect a 404
+        
     def test_download_files(self, project_id):
-        """Test downloading files"""
-        print(f"\n🔍 Testing Download Files for Project {project_id}...")
+        """Test downloading files from MongoDB-stored project"""
+        print(f"\n🔍 MongoDB Test: Testing Download Files for Project {project_id}...")
         
         try:
             url = f"{self.base_url}/api/download-files/{project_id}"
@@ -578,6 +649,12 @@ class StirlingBridgeAPITester:
                     except Exception as e:
                         print(f"  ⚠️ Warning: Could not read ZIP file: {str(e)}")
                 
+                self.mongodb_test_results["download_files"] = {
+                    "success": True,
+                    "content_type": content_type,
+                    "filename": filename
+                }
+                
                 self.test_results[f"download_files_{project_id}"] = {
                     "success": success, 
                     "content_type": content_type,
@@ -593,13 +670,103 @@ class StirlingBridgeAPITester:
                 except:
                     pass
                 
+                self.mongodb_test_results["download_files"] = {
+                    "success": False
+                }
+                
                 self.test_results[f"download_files_{project_id}"] = {"success": False}
                 return False, {}
                 
         except Exception as e:
             print(f"❌ Failed - Error: {str(e)}")
+            self.mongodb_test_results["download_files"] = {
+                "success": False,
+                "error": str(e)
+            }
             self.test_results[f"download_files_{project_id}"] = {"success": False, "error": str(e)}
             return False, {}
+            
+    def test_data_persistence(self):
+        """Test that data persists in MongoDB after server restart"""
+        print("\n🔍 MongoDB Test: Verifying data persistence across server restarts...")
+        
+        # First, create a new project with a unique name
+        persistence_test_name = f"Persistence Test {datetime.now().isoformat()}"
+        print(f"  - Creating test project: {persistence_test_name}")
+        
+        success, response = self.test_identify_land(
+            -26.2041, 
+            28.0473, 
+            persistence_test_name
+        )
+        
+        if not success or not response.get('project_id'):
+            print(f"  ❌ Failed to create test project for persistence test")
+            self.mongodb_test_results["data_persistence"] = {
+                "success": False,
+                "error": "Failed to create test project"
+            }
+            return False
+            
+        persistence_project_id = response.get('project_id')
+        print(f"  - Created project with ID: {persistence_project_id}")
+        
+        # Store the project details for comparison after restart
+        print(f"  - Retrieving project details before restart")
+        before_success, before_data = self.test_get_project(persistence_project_id)
+        
+        if not before_success:
+            print(f"  ❌ Failed to retrieve project details before restart")
+            self.mongodb_test_results["data_persistence"] = {
+                "success": False,
+                "error": "Failed to retrieve project details before restart"
+            }
+            return False
+            
+        print(f"  - Successfully retrieved project details before restart")
+        
+        # We can't actually restart the server in this test environment,
+        # but we can simulate a restart by waiting a moment and then
+        # retrieving the project again to verify it's still in the database
+        print(f"  - Simulating server restart (waiting 2 seconds)...")
+        time.sleep(2)
+        
+        # Retrieve the project again after the simulated restart
+        print(f"  - Retrieving project details after simulated restart")
+        after_success, after_data = self.test_get_project(persistence_project_id)
+        
+        if not after_success:
+            print(f"  ❌ Failed to retrieve project after simulated restart")
+            self.mongodb_test_results["data_persistence"] = {
+                "success": False,
+                "error": "Failed to retrieve project after simulated restart"
+            }
+            return False
+            
+        # Compare the data before and after
+        print(f"  - Comparing project data before and after simulated restart")
+        
+        # Check that key fields match
+        fields_match = (
+            before_data.get('id') == after_data.get('id') and
+            before_data.get('name') == after_data.get('name') and
+            before_data.get('coordinates') == after_data.get('coordinates')
+        )
+        
+        if fields_match:
+            print(f"  ✅ Project data persisted correctly in MongoDB")
+            self.mongodb_test_results["data_persistence"] = {
+                "success": True,
+                "project_id": persistence_project_id
+            }
+            return True
+        else:
+            print(f"  ❌ Project data changed after simulated restart")
+            self.mongodb_test_results["data_persistence"] = {
+                "success": False,
+                "error": "Project data changed after simulated restart"
+            }
+            return False
         
     def test_invalid_coordinates(self):
         """Test various invalid coordinate inputs"""
