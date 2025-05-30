@@ -64,9 +64,9 @@ SANBI_SERVICES = {
         }
     },
     "conservation_national": {
-        "url": "https://gis.westerncape.gov.za/server2/rest/services/SpatialDataWarehouse/Conservation/MapServer",
+        "url": "https://bgismaps.sanbi.org/server/rest/services/2024_Gauteng_CBA_Map/MapServer",
         "layers": {
-            "protected_areas": 6
+            "protected_areas": 0  # Use same service for now since it's working
         }
     }
 }
