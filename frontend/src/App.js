@@ -664,10 +664,30 @@ function App() {
         </div>
         
         <div className="ml-auto flex items-center space-x-4">
-          <span className="text-sm text-gray-600">
-            📍 {currentProject?.coordinates.latitude.toFixed(4)}, {currentProject?.coordinates.longitude.toFixed(4)}
-          </span>
-          <div className="text-sm text-gray-500">Phase1BoundariesPresent</div>
+          <button
+            onClick={refreshProjectData}
+            disabled={refreshing || loading}
+            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {refreshing ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                <span className="text-sm">Refreshing...</span>
+              </>
+            ) : (
+              <>
+                <span className="text-sm">🔄</span>
+                <span className="text-sm">Refresh Data</span>
+              </>
+            )}
+          </button>
+          
+          <div className="border-l border-gray-300 pl-4">
+            <span className="text-sm text-gray-600">
+              📍 {currentProject?.coordinates.latitude.toFixed(4)}, {currentProject?.coordinates.longitude.toFixed(4)}
+            </span>
+            <div className="text-sm text-gray-500">Phase1BoundariesPresent</div>
+          </div>
         </div>
       </nav>
 
