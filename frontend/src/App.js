@@ -706,7 +706,13 @@ function App() {
                   )?.layers.find(layer => layer.type === boundary.layer_type)?.id;
               }
               
-              if (!layerId || !layerStates[layerId]) return null;
+              // Debug logging
+              console.log(`Boundary ${index}: type=${boundary.layer_type}, layerId=${layerId}, enabled=${layerStates[layerId]}`);
+              
+              if (!layerId || !layerStates[layerId]) {
+                console.log(`Skipping boundary ${index} - layer not enabled`);
+                return null;
+              }
 
               const polygonCoords = convertGeometryToLeaflet(boundary.geometry);
               
