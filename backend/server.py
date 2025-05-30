@@ -23,8 +23,11 @@ from services.database_service import db_service
 from services.validation_service import (
     CoordinateInput, LandDataResponse, ProjectResponse, ProjectListResponse,
     HealthCheckResponse, ErrorResponse, ValidationUtils, ProjectStatus,
-    BoundaryLayer, ProjectInDB
+    BoundaryLayer, ProjectInDB, APIStatusResponse, APIConfigurationUpdate,
+    UserProfile, UserProfileUpdate, AppStatistics
 )
+from services.api_management_service import api_management_service
+from services.user_profile_service import user_profile_service
 from config.settings import settings, LayerConfiguration
 from cad_generator import CADFileManager
 from arcgis_service import ArcGISAPIService
