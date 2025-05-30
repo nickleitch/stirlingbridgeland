@@ -265,7 +265,7 @@ class SANBIAPIService(BaseAPIService):
             "geometry": json.dumps({"x": longitude, "y": latitude}),
             "geometryType": "esriGeometryPoint",
             "spatialRel": "esriSpatialRelIntersects",
-            "distance": 2000,
+            "distance": 500,  # Reduced from 2000m to 500m for more precise results
             "units": "esriSRUnit_Meter",
             "outFields": "HEIGHT,OBJECTID",
             "returnGeometry": "true",
