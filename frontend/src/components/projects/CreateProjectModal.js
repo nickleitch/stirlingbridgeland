@@ -167,7 +167,7 @@ const CreateProjectModal = memo(({ isOpen, onClose, onProjectCreated }) => {
             className="flex-1 bg-gradient-to-r from-green-600 to-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-green-700 hover:to-blue-700 transition-all flex items-center justify-center"
             disabled={loading || isSubmitting}
           >
-            {loading ? (
+            {loading || isSubmitting ? (
               <LoadingSpinner size="small" color="gray" />
             ) : (
               'Create Project'
