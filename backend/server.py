@@ -31,6 +31,9 @@ PROJECTS_COLLECTION = "projects"
 client: AsyncIOMotorClient = None
 database = None
 
+# Initialize ArcGIS service
+arcgis_service = ArcGISAPIService()
+
 async def connect_to_mongo():
     """Create database connection"""
     global client, database
