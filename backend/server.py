@@ -47,6 +47,28 @@ class LandDataResponse(BaseModel):
 # CSG API Configuration
 CSG_BASE_URL = "https://dffeportal.environment.gov.za/hosting/rest/services/CSG_Cadaster/CSG_Cadastral_Data/MapServer"
 
+# SANBI BGIS API Configuration
+SANBI_BASE_URL = "https://bgismaps.sanbi.org/server/rest/services"
+SANBI_SERVICES = {
+    "contours": {
+        "url": f"{SANBI_BASE_URL}/BGIS_Projects/Basedata_rivers_contours/MapServer",
+        "layers": {
+            "contours": 5,
+            "rivers": 4  # Assuming rivers are layer 4, will verify
+        }
+    },
+    "conservation": {
+        "url": f"{SANBI_BASE_URL}/Conservation/Protected_Areas/MapServer",
+        "layers": {
+            "protected_areas": 0
+        }
+    }
+}
+
+# AfriGIS API Configuration (placeholder for when key is available)
+AFRIGIS_BASE_URL = "https://ogc.afrigis.co.za/mapservice"
+AFRIGIS_AUTH_KEY = os.environ.get('AFRIGIS_API_KEY', None)  # Will be set when key is available
+
 # In-memory storage for project data (in production, use a proper database)
 projects_storage = {}
 
