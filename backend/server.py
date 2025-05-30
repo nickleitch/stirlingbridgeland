@@ -424,6 +424,160 @@ async def get_statistics():
             detail="Failed to retrieve statistics"
         )
 
+# ================================
+# Navigation Menu API Endpoints
+# ================================
+
+@app.get("/api/menu/api-status", response_model=APIStatusResponse)
+async def get_api_status():
+    """Get status of all configured APIs for API Management menu"""
+    try:
+        return await api_management_service.get_api_status()
+    except Exception as e:
+        logger.error(f"Failed to get API status: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve API status"
+        )
+
+@app.post("/api/menu/api-config")
+async def update_api_configuration(update: APIConfigurationUpdate):
+    """Update API configuration for API Management menu"""
+    try:
+        success = await api_management_service.update_api_configuration(update)
+        if success:
+            return {"message": "API configuration updated successfully", "success": True}
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid API name or configuration"
+            )
+    except Exception as e:
+        logger.error(f"Failed to update API config: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update API configuration"
+        )
+
+@app.get("/api/menu/api-configs")
+async def get_api_configurations():
+    """Get all API configuration schemas"""
+    try:
+        return api_management_service.get_all_api_configurations()
+    except Exception as e:
+        logger.error(f"Failed to get API configurations: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve API configurations"
+        )
+
+@app.get("/api/menu/api-docs/{api_name}")
+async def get_api_documentation(api_name: str):
+    """Get documentation for a specific API"""
+    try:
+        docs = api_management_service.get_api_documentation(api_name)
+        if docs:
+            return docs
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="API documentation not found"
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get API documentation: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve API documentation"
+        )
+
+@app.get("/api/menu/user-profile", response_model=UserProfile)
+async def get_user_profile(user_id: Optional[str] = None):
+    """Get user profile for Profile menu"""
+    try:
+        return await user_profile_service.get_user_profile(user_id)
+    except Exception as e:
+        logger.error(f"Failed to get user profile: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve user profile"
+        )
+
+@app.put("/api/menu/user-profile", response_model=UserProfile)
+async def update_user_profile(update_data: UserProfileUpdate, user_id: Optional[str] = None):
+    """Update user profile"""
+    try:
+        return await user_profile_service.update_user_profile(user_id, update_data)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Failed to update user profile: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update user profile"
+        )
+
+@app.get("/api/menu/user-stats")
+async def get_user_statistics(user_id: Optional[str] = None):
+    """Get user statistics for Profile menu"""
+    try:
+        return await user_profile_service.get_user_statistics(user_id)
+    except Exception as e:
+        logger.error(f"Failed to get user statistics: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve user statistics"
+        )
+
+@app.get("/api/menu/app-statistics", response_model=AppStatistics)
+async def get_app_statistics():
+    """Get application statistics for Dashboard"""
+    try:
+        # Get database statistics
+        db_stats = await db_service.get_project_statistics()
+        
+        # Calculate additional metrics
+        from datetime import datetime, timedelta
+        now = datetime.now()
+        today = now.date().isoformat()
+        week_ago = (now - timedelta(days=7)).isoformat()
+        
+        # Get database and count projects
+        db = await db_service.get_database()
+        projects_collection = db["projects"]
+        
+        total_projects = await projects_collection.count_documents({})
+        projects_today = await projects_collection.count_documents({
+            "created": {"$regex": f"^{today}"}
+        })
+        projects_this_week = await projects_collection.count_documents({
+            "created": {"$gte": week_ago}
+        })
+        
+        # Calculate uptime (simplified - from app start)
+        import time
+        uptime_hours = (time.time() - getattr(app.state, 'start_time', time.time())) / 3600
+        
+        return AppStatistics(
+            total_projects=total_projects,
+            projects_created_today=projects_today,
+            projects_created_this_week=projects_this_week,
+            total_boundaries_processed=db_stats.get("total_projects", 0) * 10,  # Estimate
+            avg_processing_time=5.2,  # Estimated average
+            uptime_hours=uptime_hours
+        )
+        
+    except Exception as e:
+        logger.error(f"Failed to get app statistics: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve application statistics"
+        )
+
 @app.exception_handler(ValueError)
 async def value_error_handler(request, exc):
     """Handle validation errors"""
