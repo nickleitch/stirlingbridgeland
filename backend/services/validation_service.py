@@ -186,7 +186,7 @@ class UserProfile(BaseModel):
 class UserProfileUpdate(BaseModel):
     """Model for updating user profile"""
     username: Optional[str] = Field(None, min_length=3, max_length=50)
-    email: Optional[str] = Field(None, regex=r'^[\w\.-]+@[\w\.-]+\.\w+$')
+    email: Optional[str] = Field(None, pattern=r'^[\w\.-]+@[\w\.-]+\.\w+$')
     full_name: Optional[str] = Field(None, min_length=1, max_length=100)
     organization: Optional[str] = Field(None, min_length=1, max_length=100)
 
