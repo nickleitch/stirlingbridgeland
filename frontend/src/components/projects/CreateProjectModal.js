@@ -149,7 +149,7 @@ const CreateProjectModal = memo(({ isOpen, onClose, onProjectCreated }) => {
               onChange={(e) => handleInputChange('longitude', e.target.value)}
               placeholder="31.17807"
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              disabled={loading}
+              disabled={loading || isSubmitting}
             />
           </div>
         </div>
