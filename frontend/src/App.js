@@ -148,7 +148,11 @@ function App() {
       "Farm Portions": "#00FF00", 
       "Erven": "#0000FF",
       "Holdings": "#FFFF00",
-      "Public Places": "#FF00FF"
+      "Public Places": "#FF00FF",
+      "Contours": "#8B4513",
+      "Water Bodies": "#00BFFF",
+      "Environmental Constraints": "#228B22",
+      "Roads": "#FF6347"
     };
     return colorMap[layerType] || "#000000";
   };
