@@ -496,3 +496,51 @@ class ExternalAPIManager:
             
         except Exception as e:
             return APIResponse(success=False, error=str(e), source="ArcGISAPIService")
+    
+    async def _get_open_topo_data(self, latitude: float, longitude: float) -> APIResponse:
+        """Get Open Topo Data elevation information and format as APIResponse"""
+        try:
+            if not self.open_topo_service:
+                return APIResponse(success=False, error="Open Topo Data service not available")
+            
+            # Query elevation for the point
+            elevation_response = await self.open_topo_service.query_by_coordinates(
+                latitude, longitude, dataset="srtm30m"
+            )
+            
+            if elevation_response.success:
+                return elevation_response
+            else:
+                return APIResponse(
+                    success=False, 
+                    error=f"Open Topo Data query failed: {elevation_response.error}",
+                    source="OpenTopoDataService"
+                )
+            
+        except Exception as e:
+            return APIResponse(success=False, error=str(e), source="OpenTopoDataService")
+    
+    def get_service_status(self) -> Dict[str, Any]:
+        """Get status of all external API services"""
+        status = {
+            "csg_service": {"status": "active", "description": "Chief Surveyor General cadastral data"},
+            "sanbi_service": {"status": "active", "description": "SANBI BGIS environmental and contour data"},
+            "arcgis_service": {
+                "status": "available" if self.arcgis_service else "not_configured",
+                "description": "ArcGIS Online global context data"
+            },
+            "open_topo_service": {
+                "status": "available" if self.open_topo_service else "not_available",
+                "description": "Open Topo Data elevation service"
+            }
+        }
+        
+        # Add Open Topo Data specific status if available
+        if self.open_topo_service:
+            try:
+                open_topo_status = self.open_topo_service.get_service_status()
+                status["open_topo_service"].update(open_topo_status)
+            except Exception as e:
+                status["open_topo_service"]["error"] = str(e)
+        
+        return status
