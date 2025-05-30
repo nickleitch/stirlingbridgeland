@@ -317,6 +317,82 @@ function App() {
             </div>
           )}
         </main>
+
+        {/* Create Project Modal */}
+        {showCreateModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-4">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Create New Project</h2>
+              
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+                  {error}
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Project Name
+                  </label>
+                  <input
+                    type="text"
+                    value={newProjectForm.name}
+                    onChange={(e) => setNewProjectForm(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Enter project name"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Latitude (Decimal Degrees)
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={newProjectForm.latitude}
+                    onChange={(e) => setNewProjectForm(prev => ({ ...prev, latitude: e.target.value }))}
+                    placeholder="-26.2041"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Longitude (Decimal Degrees)
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={newProjectForm.longitude}
+                    onChange={(e) => setNewProjectForm(prev => ({ ...prev, longitude: e.target.value }))}
+                    placeholder="28.0473"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div className="flex space-x-4 mt-8">
+                <button
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    setError('');
+                  }}
+                  className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCreateProject}
+                  className="flex-1 bg-gradient-to-r from-green-600 to-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-green-700 hover:to-blue-700 transition-all"
+                >
+                  Create Project
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
