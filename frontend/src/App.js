@@ -322,6 +322,128 @@ function App() {
     }
   };
 
+  // Function to refresh a specific layer
+  const handleLayerRefresh = async (layerId) => {
+    if (!currentProject) return;
+    
+    setLayerRefreshing(prev => ({ ...prev, [layerId]: true }));
+    
+    try {
+      console.log(`🔄 Refreshing layer: ${layerId} for project:`, currentProject.name);
+      
+      // Call the same identify-land endpoint but we'll update just this layer's data
+      const response = await fetch(`${import.meta.env.REACT_APP_BACKEND_URL}/api/identify-land`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: currentProject.name,
+          latitude: currentProject.coordinates.latitude,
+          longitude: currentProject.coordinates.longitude
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      
+      // Update the current project data with fresh data
+      if (result.data && result.data.boundaries) {
+        const updatedProject = {
+          ...currentProject,
+          data: result.data.boundaries,
+          lastModified: new Date().toISOString()
+        };
+        
+        // Update the projects list
+        setProjects(prevProjects => 
+          prevProjects.map(p => 
+            p.id === currentProject.id ? updatedProject : p
+          )
+        );
+        
+        // Update localStorage
+        const allProjects = projects.map(p => 
+          p.id === currentProject.id ? updatedProject : p
+        );
+        localStorage.setItem('stirling_projects', JSON.stringify(allProjects));
+        
+        // Update current project
+        setCurrentProject(updatedProject);
+        
+        console.log(`✅ Layer ${layerId} refreshed successfully`);
+      }
+      
+    } catch (error) {
+      console.error(`❌ Error refreshing layer ${layerId}:`, error);
+      alert(`Error refreshing layer. Please try again.`);
+    } finally {
+      setLayerRefreshing(prev => ({ ...prev, [layerId]: false }));
+    }
+  };
+
+  // Function to download CAD file for a specific layer
+  const handleLayerCADDownload = async (layerId) => {
+    if (!currentProject) return;
+    
+    setLayerDownloading(prev => ({ ...prev, [layerId]: true }));
+    
+    try {
+      console.log(`📐 Downloading CAD for layer: ${layerId} from project:`, currentProject.id);
+      
+      // Check what layers are available first
+      const layersResponse = await fetch(`${import.meta.env.REACT_APP_BACKEND_URL}/api/cad-layers/${currentProject.id}`);
+      if (!layersResponse.ok) {
+        throw new Error('Could not check available CAD layers');
+      }
+      
+      const layersData = await layersResponse.json();
+      const availableLayer = layersData.available_layers.find(layer => 
+        layer.layer_type.includes(layerId) || 
+        (layerId === 'contours_major' && layer.layer_type === 'contours') ||
+        (layerId === 'property_boundaries' && layer.layer_type.includes('property_boundaries'))
+      );
+      
+      if (!availableLayer) {
+        alert(`No CAD data available for ${layerId} layer. Please ensure the layer has data loaded.`);
+        return;
+      }
+      
+      // Download the full CAD package (we'll improve this to be layer-specific later)
+      const response = await fetch(`${import.meta.env.REACT_APP_BACKEND_URL}/api/download-cad/${currentProject.id}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Create layer-specific filename
+      const layerName = availableLayer.layer_name || layerId;
+      const filename = `${currentProject.name.replace(/\s+/g, '_')}_${layerName}.zip`;
+      
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      console.log(`✅ CAD file for layer ${layerId} downloaded successfully`);
+      
+    } catch (error) {
+      console.error(`❌ Error downloading CAD for layer ${layerId}:`, error);
+      alert(`Error downloading CAD file for ${layerId}. Please try again.`);
+    } finally {
+      setLayerDownloading(prev => ({ ...prev, [layerId]: false }));
+    }
+  };
+
   // Function to download CAD files
   const handleDownloadCAD = async () => {
     if (!currentProject) return;
