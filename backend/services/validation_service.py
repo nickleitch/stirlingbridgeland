@@ -153,6 +153,59 @@ class ProjectInDB(BaseModel):
     data: Optional[Dict[str, Any]] = Field(None, description="Project data")
     layers: Optional[Dict[str, Any]] = Field(None, description="Layer data")
 
+# New Models for Navigation Features
+
+class APIStatus(BaseModel):
+    """Model for API status information"""
+    name: str = Field(..., description="API name")
+    is_configured: bool = Field(..., description="Whether API is configured")
+    status: str = Field(..., description="API status (connected, error, not_configured)")
+    last_check: Optional[str] = Field(None, description="Last status check timestamp")
+    error_message: Optional[str] = Field(None, description="Error message if status is error")
+
+class APIConfiguration(BaseModel):
+    """Model for API configuration"""
+    api_name: str = Field(..., description="API name")
+    config_fields: Dict[str, Any] = Field(..., description="Configuration fields")
+
+class APIConfigurationUpdate(BaseModel):
+    """Model for updating API configuration"""
+    api_name: str = Field(..., description="API name to update")
+    config_values: Dict[str, str] = Field(..., description="Configuration values to update")
+
+class UserProfile(BaseModel):
+    """Model for user profile"""
+    user_id: str = Field(..., description="User ID")
+    username: str = Field(..., description="Username")
+    email: Optional[str] = Field(None, description="User email")
+    full_name: Optional[str] = Field(None, description="User full name")
+    organization: Optional[str] = Field(None, description="User organization")
+    created_at: str = Field(..., description="Profile creation timestamp")
+    last_login: Optional[str] = Field(None, description="Last login timestamp")
+
+class UserProfileUpdate(BaseModel):
+    """Model for updating user profile"""
+    username: Optional[str] = Field(None, min_length=3, max_length=50)
+    email: Optional[str] = Field(None, regex=r'^[\w\.-]+@[\w\.-]+\.\w+$')
+    full_name: Optional[str] = Field(None, min_length=1, max_length=100)
+    organization: Optional[str] = Field(None, min_length=1, max_length=100)
+
+class APIStatusResponse(BaseModel):
+    """Response model for API status"""
+    apis: List[APIStatus] = Field(..., description="List of API statuses")
+    total_configured: int = Field(..., description="Number of configured APIs")
+    total_available: int = Field(..., description="Total number of available APIs")
+    timestamp: str = Field(..., description="Response timestamp")
+
+class AppStatistics(BaseModel):
+    """Model for application statistics"""
+    total_projects: int = Field(..., description="Total number of projects")
+    projects_created_today: int = Field(..., description="Projects created today")
+    projects_created_this_week: int = Field(..., description="Projects created this week")
+    total_boundaries_processed: int = Field(..., description="Total boundaries processed")
+    avg_processing_time: Optional[float] = Field(None, description="Average processing time in seconds")
+    uptime_hours: float = Field(..., description="Application uptime in hours")
+
 class ValidationUtils:
     """Utility functions for validation"""
     
@@ -189,3 +242,16 @@ class ValidationUtils:
         sanitized = re.sub(r'_+', '_', sanitized)
         # Remove leading/trailing underscores and spaces
         return sanitized.strip('_ ')
+    
+    @staticmethod
+    def validate_email(email: str) -> bool:
+        """Validate email format"""
+        email_pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+        return bool(re.match(email_pattern, email))
+    
+    @staticmethod
+    def validate_username(username: str) -> bool:
+        """Validate username format"""
+        # Allow alphanumeric characters, underscores, and hyphens
+        username_pattern = r'^[a-zA-Z0-9_-]{3,50}$'
+        return bool(re.match(username_pattern, username))
