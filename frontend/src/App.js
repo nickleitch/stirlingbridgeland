@@ -96,8 +96,7 @@ function App() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newProjectForm, setNewProjectForm] = useState({
     name: '',
-    latitude: '',
-    longitude: ''
+    coordinates: ''  // Single input for both lat and lng
   });
   const [downloading, setDownloading] = useState(false);
   const [downloadingCAD, setDownloadingCAD] = useState(false);
