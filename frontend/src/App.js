@@ -100,6 +100,7 @@ function App() {
     longitude: ''
   });
   const [downloading, setDownloading] = useState(false);
+  const [downloadingCAD, setDownloadingCAD] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const mapRef = useRef();
 
