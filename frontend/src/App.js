@@ -320,6 +320,48 @@ function App() {
     }
   };
 
+    // Function to download CAD files
+  const handleDownloadCAD = async () => {
+    if (!currentProject) return;
+    
+    setDownloadingCAD(true);
+    
+    try {
+      console.log('📐 Downloading CAD files for project:', currentProject.id);
+      
+      const response = await fetch(`${import.meta.env.REACT_APP_BACKEND_URL}/api/download-cad/${currentProject.id}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Extract filename from response headers or use default
+      const contentDisposition = response.headers.get('Content-Disposition');
+      const filename = contentDisposition 
+        ? contentDisposition.split('filename=')[1]?.replace(/"/g, '')
+        : `${currentProject.name.replace(/\s+/g, '_')}_CAD_Layers.zip`;
+      
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      console.log('✅ CAD files downloaded successfully');
+      
+    } catch (error) {
+      console.error('❌ Error downloading CAD files:', error);
+      alert('Error downloading CAD files. Please try again.');
+    } finally {
+      setDownloadingCAD(false);
+    }
+  };
+
   const refreshProjectData = async () => {
     if (!currentProject) return;
     
