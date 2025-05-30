@@ -491,6 +491,154 @@ async def delete_all_projects():
         )
 
 # ================================
+# Open Topo Data API Endpoints  
+# ================================
+
+@app.get("/api/elevation/{latitude}/{longitude}")
+async def get_elevation_point(latitude: float, longitude: float, dataset: Optional[str] = "srtm30m"):
+    """Get elevation data for a specific coordinate point"""
+    try:
+        if not api_manager.open_topo_service:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Open Topo Data service not available"
+            )
+        
+        # Validate coordinates
+        if not ValidationUtils.validate_coordinates_in_south_africa(latitude, longitude):
+            logger.warning(f"Coordinates outside South Africa bounds: {latitude}, {longitude}")
+        
+        # Query elevation data
+        elevation_response = await api_manager.open_topo_service.query_by_coordinates(
+            latitude, longitude, dataset=dataset
+        )
+        
+        if elevation_response.success:
+            return {
+                "success": True,
+                "coordinates": {"latitude": latitude, "longitude": longitude},
+                "elevation_data": elevation_response.data,
+                "dataset": dataset,
+                "timestamp": datetime.now().isoformat()
+            }
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Elevation query failed: {elevation_response.error}"
+            )
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get elevation data: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve elevation data"
+        )
+
+@app.post("/api/elevation/grid")
+async def generate_elevation_grid(coordinates: CoordinateInput, 
+                                grid_size_km: Optional[float] = 2.0,
+                                grid_points: Optional[int] = 10,
+                                dataset: Optional[str] = "srtm30m"):
+    """Generate elevation grid around coordinates for contour analysis"""
+    try:
+        if not api_manager.open_topo_service:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Open Topo Data service not available"
+            )
+        
+        # Validate parameters
+        if grid_size_km <= 0 or grid_size_km > 10:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Grid size must be between 0 and 10 kilometers"
+            )
+        
+        if grid_points < 3 or grid_points > 20:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Grid points must be between 3 and 20"
+            )
+        
+        # Generate elevation grid
+        grid_response = await api_manager.open_topo_service.generate_elevation_grid(
+            coordinates.latitude, coordinates.longitude,
+            grid_size_km=grid_size_km, grid_points=grid_points, dataset=dataset
+        )
+        
+        if grid_response.success:
+            return {
+                "success": True,
+                "center_coordinates": {"latitude": coordinates.latitude, "longitude": coordinates.longitude},
+                "grid_parameters": {
+                    "size_km": grid_size_km,
+                    "points": grid_points,
+                    "dataset": dataset
+                },
+                "elevation_grid": grid_response.data,
+                "timestamp": datetime.now().isoformat()
+            }
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Elevation grid generation failed: {grid_response.error}"
+            )
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to generate elevation grid: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to generate elevation grid"
+        )
+
+@app.get("/api/elevation/datasets")
+async def get_available_datasets():
+    """Get available elevation datasets"""
+    try:
+        if not api_manager.open_topo_service:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Open Topo Data service not available"
+            )
+        
+        return {
+            "available_datasets": api_manager.open_topo_service.datasets,
+            "default_dataset": "srtm30m",
+            "interpolation_methods": ["bilinear", "nearest", "cubic"],
+            "service_status": api_manager.open_topo_service.get_service_status(),
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get dataset information: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve dataset information"
+        )
+
+@app.get("/api/external-services/status")
+async def get_external_services_status():
+    """Get status of all external API services including Open Topo Data"""
+    try:
+        return {
+            "external_services": api_manager.get_service_status(),
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to get external services status: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve external services status"
+        )
+
+# ================================
 # Navigation Menu API Endpoints
 # ================================
 
