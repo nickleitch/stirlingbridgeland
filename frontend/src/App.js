@@ -883,30 +883,18 @@ function App() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Latitude (Decimal Degrees)
+                    Coordinates
                   </label>
                   <input
-                    type="number"
-                    step="any"
-                    value={newProjectForm.latitude}
-                    onChange={(e) => setNewProjectForm(prev => ({ ...prev, latitude: e.target.value }))}
-                    placeholder="-26.2041"
+                    type="text"
+                    value={newProjectForm.coordinates}
+                    onChange={(e) => setNewProjectForm(prev => ({ ...prev, coordinates: e.target.value }))}
+                    placeholder="e.g., -26.2041, 28.0473 or S26.2041 E28.0473"
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Longitude (Decimal Degrees)
-                  </label>
-                  <input
-                    type="number"
-                    step="any"
-                    value={newProjectForm.longitude}
-                    onChange={(e) => setNewProjectForm(prev => ({ ...prev, longitude: e.target.value }))}
-                    placeholder="28.0473"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Paste coordinates from Google Maps, GPS device, or enter as "latitude, longitude"
+                  </p>
                 </div>
               </div>
 
