@@ -23,10 +23,13 @@ class ArcGISAPIService:
     - Spatial analysis services (Geometry, GeoEnrichment)
     """
     
-    def __init__(self, api_key: Optional[str] = None):
-        self.api_key = api_key or os.environ.get('ARCGIS_API_KEY')
+    def __init__(self, client_id: Optional[str] = None, client_secret: Optional[str] = None):
+        self.client_id = client_id or os.environ.get('ARCGIS_CLIENT_ID')
+        self.client_secret = client_secret or os.environ.get('ARCGIS_CLIENT_SECRET')
         self.base_timeout = 30.0
         self.token_cache = {}
+        self.access_token = None
+        self.token_expires = None
         
         # ArcGIS Online Base URLs
         self.base_urls = {
