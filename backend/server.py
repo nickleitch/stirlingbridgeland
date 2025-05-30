@@ -54,11 +54,17 @@ SANBI_SERVICES = {
         "url": f"{SANBI_BASE_URL}/BGIS_Projects/Basedata_rivers_contours/MapServer",
         "layers": {
             "contours": 5,
-            "rivers": 4  # Assuming rivers are layer 4, will verify
+            "rivers": 4
         }
     },
-    "conservation": {
-        "url": f"{SANBI_BASE_URL}/Conservation/Protected_Areas/MapServer",
+    "conservation_gauteng": {
+        "url": f"{SANBI_BASE_URL}/2024_Gauteng_CBA_Map/MapServer",
+        "layers": {
+            "protected_areas": 0
+        }
+    },
+    "conservation_national": {
+        "url": "https://egismaps.environment.gov.za/ows/rest/services/Terrestrial_Protected_Areas/MapServer",
         "layers": {
             "protected_areas": 0
         }
