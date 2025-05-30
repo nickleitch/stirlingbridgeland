@@ -1,943 +1,448 @@
-from fastapi import FastAPI, HTTPException
+"""
+Stirling Bridge LandDev API - Refactored Server
+Professional land development platform with clean architecture and service layers.
+"""
+
+from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
-import httpx
-import json
 import uuid
-import os
+import logging
 from datetime import datetime
 import zipfile
 import io
-import base64
-from motor.motor_asyncio import AsyncIOMotorClient
-from pymongo.errors import DuplicateKeyError
-import asyncio
-from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
-
-# Import CAD generation system
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from cad_generator import CADFileManager, SDPLayerGenerator
+# Import service layers
+from services.external_api_service import ExternalAPIManager
+from services.database_service import db_service
+from services.validation_service import (
+    CoordinateInput, LandDataResponse, ProjectResponse, ProjectListResponse,
+    HealthCheckResponse, ErrorResponse, ValidationUtils, ProjectStatus,
+    BoundaryLayer, ProjectInDB
+)
+from config.settings import settings, LayerConfiguration
+from cad_generator import CADFileManager
 from arcgis_service import ArcGISAPIService
 
-# Database configuration
-MONGO_URL = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
-DATABASE_NAME = "stirling_landdev"
-PROJECTS_COLLECTION = "projects"
+# Setup logging
+logger = logging.getLogger(__name__)
 
-# Global variables for database
-client: AsyncIOMotorClient = None
-database = None
+# Initialize services
+api_manager = ExternalAPIManager()
+cad_manager = CADFileManager()
 
-# Initialize ArcGIS service (will be created after startup)
-arcgis_service = None
-
-async def connect_to_mongo():
-    """Create database connection"""
-    global client, database
-    client = AsyncIOMotorClient(MONGO_URL)
-    database = client[DATABASE_NAME]
-    
-    # Create indexes for better performance
-    await database[PROJECTS_COLLECTION].create_index("project_id", unique=True)
-    await database[PROJECTS_COLLECTION].create_index("created")
-    print(f"✅ Connected to MongoDB: {DATABASE_NAME}")
-
-async def close_mongo_connection():
-    """Close database connection"""
-    global client
-    if client:
-        client.close()
-        print("❌ Disconnected from MongoDB")
-
-# Pydantic models for database
-class ProjectCreate(BaseModel):
-    name: str
-    latitude: float
-    longitude: float
-
-class ProjectInDB(BaseModel):
-    project_id: str
-    name: str
-    coordinates: Dict[str, float]
-    created: str
-    last_modified: str
-    data: Optional[Dict[str, Any]] = None
-    layers: Optional[Dict[str, Any]] = None
-
-class ProjectResponse(BaseModel):
-    id: str
-    name: str
-    coordinates: Dict[str, float]
-    created: str
-    lastModified: str
-    data: Optional[List[Any]] = None  # Changed to List to hold boundaries array
-    layers: Optional[Dict[str, Any]] = None
-
-app = FastAPI(title="Stirling Bridge LandDev API")
-
-@app.on_event("startup")
-async def startup_db_client():
-    global arcgis_service
-    await connect_to_mongo()
-    
-    # Initialize ArcGIS service
-    arcgis_service = ArcGISAPIService()
-    print("✅ ArcGIS service initialized")
-
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    await close_mongo_connection()
-
-# CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+# Create FastAPI app with configuration
+app = FastAPI(
+    title=settings.app_name,
+    version=settings.app_version,
+    description="Professional land development platform for South African SPLUMA compliance",
+    debug=settings.debug
 )
 
-# Models
-class CoordinateInput(BaseModel):
-    latitude: float
-    longitude: float
-    project_name: Optional[str] = "Land Development Project"
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins,
+    allow_credentials=settings.cors_allow_credentials,
+    allow_methods=settings.cors_allow_methods,
+    allow_headers=settings.cors_allow_headers,
+)
 
-class BoundaryLayer(BaseModel):
-    layer_name: str
-    layer_type: str
-    geometry: Dict[str, Any]
-    properties: Dict[str, Any]
-    source_api: str
-
-class LandDataResponse(BaseModel):
-    project_id: str
-    coordinates: Dict[str, float]
-    boundaries: List[BoundaryLayer]
-    files_generated: List[str]
-    status: str
-    created_at: str
-
-# CSG API Configuration
-CSG_BASE_URL = "https://dffeportal.environment.gov.za/hosting/rest/services/CSG_Cadaster/CSG_Cadastral_Data/MapServer"
-
-# SANBI BGIS API Configuration
-SANBI_BASE_URL = "https://bgismaps.sanbi.org/server/rest/services"
-SANBI_SERVICES = {
-    "contours": {
-        "url": f"{SANBI_BASE_URL}/BGIS_Projects/Basedata_rivers_contours/MapServer",
-        "layers": {
-            "contours_north": 6,    # Proper topographic contours with HEIGHT field
-            "contours_south": 7,    # Proper topographic contours with HEIGHT field
-            "rivers": 4
-        }
-    },
-    "conservation_gauteng": {
-        "url": f"{SANBI_BASE_URL}/2024_Gauteng_CBA_Map/MapServer",
-        "layers": {
-            "protected_areas": 0
-        }
-    },
-    "conservation_national": {
-        "url": "https://bgismaps.sanbi.org/server/rest/services/2024_Gauteng_CBA_Map/MapServer",
-        "layers": {
-            "protected_areas": 0  # Use same service for now since it's working
-        }
-    }
-}
-
-# AfriGIS API Configuration (placeholder for when key is available)
-AFRIGIS_BASE_URL = "https://ogc.afrigis.co.za/mapservice"
-AFRIGIS_AUTH_KEY = os.environ.get('AFRIGIS_API_KEY', None)  # Will be set when key is available
-
-# In-memory storage for project data (in production, use a proper database)
-projects_storage = {}
-
-# Available boundary layers to query
-BOUNDARY_LAYERS = {
-    "farm_portions": {"layer_id": 1, "name": "Farm Portions"},
-    "erven": {"layer_id": 2, "name": "Erven"},
-    "holdings": {"layer_id": 3, "name": "Holdings"},
-    "public_places": {"layer_id": 4, "name": "Public Places"}
-}
-
-async def query_csg_api(latitude: float, longitude: float, layer_id: int):
-    """Query the Chief Surveyor General API for boundary data"""
-    try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            # Use identify endpoint to find features at the given coordinates
-            url = f"{CSG_BASE_URL}/identify"
-            params = {
-                "geometry": json.dumps({"x": longitude, "y": latitude}),
-                "geometryType": "esriGeometryPoint",
-                "layers": f"visible:{layer_id}",
-                "tolerance": 10,
-                "mapExtent": f"{longitude-0.01},{latitude-0.01},{longitude+0.01},{latitude+0.01}",
-                "imageDisplay": "400,400,96",
-                "returnGeometry": "true",
-                "f": "json"
-            }
-            
-            response = await client.get(url, params=params)
-            response.raise_for_status()
-            return response.json()
-    except Exception as e:
-        print(f"Error querying CSG API for layer {layer_id}: {str(e)}")
-        return {"results": []}
-
-async def query_sanbi_bgis(latitude: float, longitude: float, service_name: str, layer_id: int):
-    """Query SANBI BGIS API for environmental and topographic data"""
-    try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            # Use the service configuration from SANBI_SERVICES
-            service_config = SANBI_SERVICES.get(service_name)
-            if not service_config:
-                print(f"Unknown SANBI service: {service_name}")
-                return {"results": []}
-            
-            # For contours (layers 6,7), use query endpoint for better results
-            if layer_id in [6, 7]:  # Contour layers
-                url = f"{service_config['url']}/{layer_id}/query"
-                params = {
-                    "geometry": json.dumps({"x": longitude, "y": latitude}),
-                    "geometryType": "esriGeometryPoint",
-                    "spatialRel": "esriSpatialRelIntersects",
-                    "distance": 2000,  # 2km search radius for contours
-                    "units": "esriSRUnit_Meter",
-                    "outFields": "HEIGHT,OBJECTID",
-                    "returnGeometry": "true",
-                    "f": "json"
-                }
-                
-                response = await client.get(url, params=params)
-                response.raise_for_status()
-                data = response.json()
-                
-                # Convert query response to identify format for compatibility
-                results = []
-                for feature in data.get("features", []):
-                    results.append({
-                        "layerId": layer_id,
-                        "layerName": f"Contours {'north' if layer_id == 6 else 'south'}",
-                        "geometry": feature.get("geometry"),
-                        "attributes": feature.get("attributes", {})
-                    })
-                
-                return {"results": results}
-            
-            else:  # Other layers use identify
-                url = f"{service_config['url']}/identify"
-                params = {
-                    "geometry": json.dumps({"x": longitude, "y": latitude}),
-                    "geometryType": "esriGeometryPoint",
-                    "layers": f"visible:{layer_id}",
-                    "tolerance": 50,
-                    "mapExtent": f"{longitude-0.02},{latitude-0.02},{longitude+0.02},{latitude+0.02}",
-                    "imageDisplay": "400,400,96",
-                    "returnGeometry": "true",
-                    "f": "json"
-                }
-                
-                response = await client.get(url, params=params)
-                response.raise_for_status()
-                return response.json()
-                
-    except Exception as e:
-        print(f"Error querying SANBI BGIS for {service_name}, layer {layer_id}: {str(e)}")
-        return {"results": []}
-
-async def query_afrigis_wfs(latitude: float, longitude: float, layer_name: str):
-    """Query AfriGIS WFS for roads and infrastructure data (placeholder for when API key is available)"""
-    if not AFRIGIS_AUTH_KEY:
-        print("AfriGIS API key not available - skipping AfriGIS data")
-        return {"features": []}
+@app.on_event("startup")
+async def startup():
+    """Application startup initialization"""
+    logger.info(f"🚀 Starting {settings.app_name} v{settings.app_version}")
     
-    try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            # Create a bounding box around the coordinates
-            bbox = f"{longitude-0.01},{latitude-0.01},{longitude+0.01},{latitude+0.01}"
-            
-            url = f"{AFRIGIS_BASE_URL}/wfs"
-            params = {
-                "authkey": AFRIGIS_AUTH_KEY,
-                "service": "WFS",
-                "version": "1.1.0",
-                "request": "GetFeature",
-                "typeName": layer_name,
-                "bbox": bbox,
-                "outputFormat": "application/json"
-            }
-            
-            response = await client.get(url, params=params)
-            response.raise_for_status()
-            return response.json()
-    except Exception as e:
-        print(f"Error querying AfriGIS WFS for {layer_name}: {str(e)}")
-        return {"features": []}
-
-async def query_additional_boundaries(latitude: float, longitude: float):
-    """Query additional data sources - SANBI BGIS and AfriGIS"""
-    additional_boundaries = []
+    # Connect to database
+    if not await db_service.connect():
+        logger.error("Failed to connect to database")
+        raise RuntimeError("Database connection failed")
     
-    # Query SANBI BGIS for contours and rivers
-    try:
-        # Query both north and south contours to get full coverage
-        contour_boundaries = []
-        
-        # Query contours north (layer 6)
-        contour_north = await query_sanbi_bgis(latitude, longitude, "contours", 6)
-        if contour_north.get("results"):
-            for result in contour_north["results"]:
-                if result.get("geometry") and result.get("attributes"):
-                    height = result["attributes"].get("HEIGHT", "unknown")
-                    boundary = BoundaryLayer(
-                        layer_name=f"Contour {height}m",
-                        layer_type="Contours",
-                        geometry=result["geometry"],
-                        properties=result["attributes"],
-                        source_api="SANBI_BGIS"
-                    )
-                    contour_boundaries.append(boundary)
-        
-        # Query contours south (layer 7) 
-        contour_south = await query_sanbi_bgis(latitude, longitude, "contours", 7)
-        if contour_south.get("results"):
-            for result in contour_south["results"]:
-                if result.get("geometry") and result.get("attributes"):
-                    height = result["attributes"].get("HEIGHT", "unknown")
-                    boundary = BoundaryLayer(
-                        layer_name=f"Contour {height}m",
-                        layer_type="Contours", 
-                        geometry=result["geometry"],
-                        properties=result["attributes"],
-                        source_api="SANBI_BGIS"
-                    )
-                    contour_boundaries.append(boundary)
-        
-        additional_boundaries.extend(contour_boundaries)
-        
-        # Query rivers/water bodies
-        river_data = await query_sanbi_bgis(latitude, longitude, "contours", 4)
-        if river_data.get("results"):
-            for result in river_data["results"]:
-                if result.get("geometry") and result.get("attributes"):
-                    boundary = BoundaryLayer(
-                        layer_name=f"River_{result['attributes'].get('OBJECTID', 'unknown')}",
-                        layer_type="Water Bodies",
-                        geometry=result["geometry"],
-                        properties=result["attributes"],
-                        source_api="SANBI_BGIS"
-                    )
-                    additional_boundaries.append(boundary)
-        
-        # Query protected areas from multiple sources
-        protected_areas_found = False
-        
-        # Try Gauteng Conservation Plan
-        try:
-            gauteng_protected_data = await query_sanbi_bgis(latitude, longitude, "conservation_gauteng", 0)
-            if gauteng_protected_data.get("results"):
-                for result in gauteng_protected_data["results"]:
-                    if result.get("geometry") and result.get("attributes"):
-                        # Determine protection level or type
-                        attrs = result["attributes"]
-                        protection_type = attrs.get("CBA_ESA", attrs.get("CBACat", "Conservation Area"))
-                        
-                        boundary = BoundaryLayer(
-                            layer_name=f"Conservation_{protection_type}_{result['attributes'].get('OBJECTID', 'unknown')}",
-                            layer_type="Environmental Constraints",
-                            geometry=result["geometry"],
-                            properties=result["attributes"],
-                            source_api="SANBI_BGIS_Gauteng"
-                        )
-                        additional_boundaries.append(boundary)
-                        protected_areas_found = True
-        except Exception as e:
-            print(f"Error querying Gauteng conservation areas: {str(e)}")
-        
-        # Try National Protected Areas if Gauteng didn't find any
-        if not protected_areas_found:
-            try:
-                national_protected_data = await query_sanbi_bgis(latitude, longitude, "conservation_national", 0)
-                if national_protected_data.get("results"):
-                    for result in national_protected_data["results"]:
-                        if result.get("geometry") and result.get("attributes"):
-                            attrs = result["attributes"]
-                            area_name = attrs.get("NAME", attrs.get("AREA_NAME", "Protected Area"))
-                            
-                            boundary = BoundaryLayer(
-                                layer_name=f"Protected_Area_{area_name}_{result['attributes'].get('OBJECTID', 'unknown')}",
-                                layer_type="Environmental Constraints",
-                                geometry=result["geometry"],
-                                properties=result["attributes"],
-                                source_api="SANBI_BGIS_National"
-                            )
-                            additional_boundaries.append(boundary)
-            except Exception as e:
-                print(f"Error querying national protected areas: {str(e)}")
-    
-    except Exception as e:
-        print(f"Error querying SANBI BGIS: {str(e)}")
-
-    # Query ArcGIS services for global context data
-    try:
-        print(f"🌍 Querying ArcGIS services for global context at {latitude}, {longitude}")
-        
-        # Get comprehensive land development data from ArcGIS
-        arcgis_data = await arcgis_service.get_land_development_data(
-            latitude, longitude, 
-            # Select the simplified public services
-            services=['world_countries', 'world_admin_divisions', 'world_cities']
+    # Initialize ArcGIS service if credentials are available
+    if settings.has_arcgis_credentials:
+        arcgis_service = ArcGISAPIService(
+            client_id=settings.arcgis_client_id,
+            client_secret=settings.arcgis_client_secret
         )
-        
-        if arcgis_data.get("features"):
-            print(f"✅ Found {len(arcgis_data['features'])} ArcGIS features")
-            
-            for feature in arcgis_data["features"]:
-                # Convert ArcGIS feature to BoundaryLayer format
-                boundary = BoundaryLayer(
-                    layer_name=feature.get("layer_name"),
-                    layer_type=feature.get("layer_type"),
-                    geometry=feature.get("geometry"),
-                    properties=feature.get("properties", {}),
-                    source_api=feature.get("source_api", "ArcGIS_Online")
-                )
-                additional_boundaries.append(boundary)
-        
-        if arcgis_data.get("errors"):
-            print(f"⚠️ ArcGIS query errors: {len(arcgis_data['errors'])}")
-            for error in arcgis_data["errors"]:
-                print(f"   - {error['service']}: {error['error']}")
-
-    except Exception as e:
-        print(f"⚠️ Error querying ArcGIS services: {str(e)}")
-        # Don't fail the entire request if ArcGIS is unavailable
-        pass
+        api_manager.set_arcgis_service(arcgis_service)
+        logger.info("✅ ArcGIS service initialized with credentials")
+    else:
+        logger.warning("⚠️ ArcGIS credentials not configured")
     
-    # Query AfriGIS for roads (if API key is available)
-    try:
-        if AFRIGIS_AUTH_KEY:
-            # This is a placeholder structure - actual layer names need to be verified with AfriGIS documentation
-            road_data = await query_afrigis_wfs(latitude, longitude, "roads_major")  # Placeholder layer name
-            if road_data.get("features"):
-                for feature in road_data["features"]:
-                    if feature.get("geometry") and feature.get("properties"):
-                        boundary = BoundaryLayer(
-                            layer_name=f"Road_{feature['properties'].get('id', 'unknown')}",
-                            layer_type="Roads",
-                            geometry=feature["geometry"],
-                            properties=feature["properties"],
-                            source_api="AfriGIS"
-                        )
-                        additional_boundaries.append(boundary)
-    except Exception as e:
-        print(f"Error querying AfriGIS: {str(e)}")
-    
-    return additional_boundaries
+    logger.info("✅ Application startup complete")
 
-def convert_to_dwg_layers(boundaries: List[BoundaryLayer]) -> Dict[str, Any]:
-    """Convert boundary data to DWG-compatible layer structure"""
-    dwg_layers = {
-        "layers": [],
-        "metadata": {
-            "coordinate_system": "WGS84",
-            "units": "decimal_degrees",
-            "created_at": datetime.now().isoformat()
-        }
-    }
-    
-    for boundary in boundaries:
-        layer = {
-            "name": boundary.layer_name,
-            "type": boundary.layer_type,
-            "geometry": boundary.geometry,
-            "properties": boundary.properties,
-            "style": {
-                "color": get_layer_color(boundary.layer_type),
-                "line_weight": get_layer_weight(boundary.layer_type)
-            }
-        }
-        dwg_layers["layers"].append(layer)
-    
-    return dwg_layers
+@app.on_event("shutdown")
+async def shutdown():
+    """Application shutdown cleanup"""
+    await db_service.disconnect()
+    logger.info("👋 Application shutdown complete")
 
-def get_layer_color(layer_type: str) -> str:
-    """Assign colors to different layer types"""
-    color_map = {
-        "Farm Portions": "#00FF00",           # Green
-        "Erven": "#0000FF",                   # Blue
-        "Holdings": "#FFFF00",                # Yellow
-        "Public Places": "#FF00FF",           # Magenta
-        "Contours": "#8B4513",               # Brown
-        "Water Bodies": "#00BFFF",           # Deep Sky Blue
-        "Environmental Constraints": "#228B22", # Forest Green
-        "Roads": "#FF6347"                   # Tomato Red
-    }
-    return color_map.get(layer_type, "#000000")
-
-def get_layer_weight(layer_type: str) -> float:
-    """Assign line weights to different layer types"""
-    weight_map = {
-        "Farm Portions": 0.6,
-        "Erven": 0.4,
-        "Holdings": 0.5,
-        "Public Places": 0.3,
-        "Contours": 0.2,
-        "Water Bodies": 0.8,
-        "Environmental Constraints": 0.7,
-        "Roads": 0.9
-    }
-    return weight_map.get(layer_type, 0.5)
-
-@app.get("/api/health")
+@app.get("/api/health", response_model=HealthCheckResponse)
 async def health_check():
-    return {"status": "healthy", "service": "Stirling Bridge LandDev API"}
+    """Health check endpoint with database status"""
+    try:
+        db_health = await db_service.health_check()
+        
+        return HealthCheckResponse(
+            status="healthy" if db_health["status"] == "connected" else "degraded",
+            service=settings.app_name,
+            timestamp=datetime.now().isoformat(),
+            version=settings.app_version
+        )
+    except Exception as e:
+        logger.error(f"Health check failed: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Service unhealthy"
+        )
+
+@app.get("/api/boundary-types")
+async def get_boundary_types():
+    """Get available boundary types with color configuration"""
+    try:
+        boundary_types = []
+        
+        for layer_type, color in LayerConfiguration.LAYER_COLORS.items():
+            weight = LayerConfiguration.LAYER_WEIGHTS.get(layer_type, 0.5)
+            boundary_types.append({
+                "type": layer_type,
+                "color": color,
+                "weight": weight,
+                "enabled": True
+            })
+        
+        return {
+            "boundary_types": boundary_types,
+            "total_types": len(boundary_types),
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error getting boundary types: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve boundary types"
+        )
 
 @app.post("/api/identify-land", response_model=LandDataResponse)
-async def identify_land(coordinate_input: CoordinateInput):
-    """Main endpoint to identify land and retrieve boundary data"""
+async def identify_land(coordinates: CoordinateInput):
+    """Identify land boundaries and create project"""
     try:
+        logger.info(f"Processing land identification request for {coordinates.latitude}, {coordinates.longitude}")
+        
+        # Validate coordinates are in South Africa
+        if not ValidationUtils.validate_coordinates_in_south_africa(
+            coordinates.latitude, coordinates.longitude
+        ):
+            logger.warning(f"Coordinates outside South Africa bounds: {coordinates.latitude}, {coordinates.longitude}")
+        
+        # Generate unique project ID
         project_id = str(uuid.uuid4())
-        boundaries = []
+        timestamp = datetime.now().isoformat()
         
-        # Query CSG API for all boundary layers
-        for layer_key, layer_info in BOUNDARY_LAYERS.items():
-            csg_data = await query_csg_api(
-                coordinate_input.latitude, 
-                coordinate_input.longitude, 
-                layer_info["layer_id"]
-            )
-            
-            # Process CSG results
-            if csg_data.get("results"):
-                for result in csg_data["results"]:
-                    if result.get("geometry") and result.get("attributes"):
-                        boundary = BoundaryLayer(
-                            layer_name=f"{layer_info['name']}_{result['attributes'].get('OBJECTID', 'unknown')}",
-                            layer_type=layer_info["name"],
-                            geometry=result["geometry"],
-                            properties=result["attributes"],
-                            source_api="CSG"
-                        )
-                        boundaries.append(boundary)
-        
-        # Query additional boundary sources
-        additional_boundaries = await query_additional_boundaries(
-            coordinate_input.latitude, 
-            coordinate_input.longitude
+        # Get comprehensive land data from all APIs
+        land_data = await api_manager.get_comprehensive_land_data(
+            coordinates.latitude, coordinates.longitude
         )
-        boundaries.extend(additional_boundaries)
         
-        # Convert to DWG format
-        dwg_data = convert_to_dwg_layers(boundaries)
+        # Convert boundaries to BoundaryLayer models
+        boundary_layers = []
+        for boundary in land_data["boundaries"]:
+            try:
+                boundary_layer = BoundaryLayer(
+                    layer_name=boundary["layer_name"],
+                    layer_type=boundary["layer_type"],
+                    geometry=boundary.get("geometry"),
+                    properties=boundary.get("properties", {}),
+                    source_api=boundary["source_api"]
+                )
+                boundary_layers.append(boundary_layer)
+            except Exception as e:
+                logger.warning(f"Failed to create boundary layer: {str(e)}")
+                continue
         
-        # Generate files for architect
+        # Generate CAD files
         files_generated = []
+        if boundary_layers:
+            try:
+                # Convert BoundaryLayer models back to dict format for CAD generation
+                boundaries_for_cad = [
+                    {
+                        "layer_name": bl.layer_name,
+                        "layer_type": bl.layer_type,
+                        "geometry": bl.geometry.dict() if bl.geometry else {},
+                        "properties": bl.properties,
+                        "source_api": bl.source_api
+                    }
+                    for bl in boundary_layers
+                ]
+                
+                cad_files = await cad_manager.generate_project_cad_layers(
+                    project_id, coordinates.project_name, boundaries_for_cad
+                )
+                files_generated = list(cad_files.keys())
+                logger.info(f"Generated {len(files_generated)} CAD files")
+            except Exception as e:
+                logger.error(f"CAD generation failed: {str(e)}")
+                files_generated = []
         
-        # Create JSON file with all boundary data
-        json_filename = f"land_boundaries_{project_id}.json"
-        files_generated.append(json_filename)
+        # Determine project status
+        project_status = ProjectStatus.COMPLETED
+        if not boundary_layers:
+            project_status = ProjectStatus.NO_DATA_FOUND
+        elif land_data.get("errors"):
+            project_status = ProjectStatus.PROCESSING  # Partial success
         
-        # Create DWG-ready file
-        dwg_filename = f"boundaries_for_cad_{project_id}.json"
-        files_generated.append(dwg_filename)
-        
-        # Prepare response
-        response = LandDataResponse(
-            project_id=project_id,
-            coordinates={
-                "latitude": coordinate_input.latitude,
-                "longitude": coordinate_input.longitude
-            },
-            boundaries=boundaries,
-            files_generated=files_generated,
-            status="completed" if boundaries else "no_data_found",
-            created_at=datetime.now().isoformat()
-        )
-        
-        # Store project data in MongoDB
+        # Create project in database
         project_data = ProjectInDB(
             project_id=project_id,
-            name=coordinate_input.project_name,
-            coordinates={
-                "latitude": coordinate_input.latitude,
-                "longitude": coordinate_input.longitude
-            },
-            created=datetime.now().isoformat(),
-            last_modified=datetime.now().isoformat(),
+            name=coordinates.project_name,
+            coordinates={"latitude": coordinates.latitude, "longitude": coordinates.longitude},
+            created=timestamp,
+            last_modified=timestamp,
             data={
-                "response": response.dict(),
-                "dwg_data": dwg_data,
-                "raw_boundaries": [b.dict() for b in boundaries]
+                "boundaries": [bl.dict() for bl in boundary_layers],
+                "files_generated": files_generated,
+                "errors": land_data.get("errors", []),
+                "api_response": land_data
             }
         )
         
-        try:
-            await database[PROJECTS_COLLECTION].insert_one(project_data.dict())
-        except DuplicateKeyError:
-            raise HTTPException(status_code=400, detail="Project ID already exists")
+        db_result = await db_service.create_project(project_data)
+        if not db_result["success"]:
+            logger.error(f"Failed to save project to database: {db_result.get('error')}")
+            # Continue anyway - don't fail the request if database save fails
         
+        # Create response
+        response = LandDataResponse(
+            project_id=project_id,
+            coordinates={"latitude": coordinates.latitude, "longitude": coordinates.longitude},
+            boundaries=boundary_layers,
+            files_generated=files_generated,
+            status=project_status,
+            created_at=timestamp,
+            total_boundaries=len(boundary_layers)
+        )
+        
+        logger.info(f"Land identification complete: {len(boundary_layers)} boundaries found")
         return response
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing land identification: {str(e)}")
+        logger.error(f"Land identification failed: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to identify land: {str(e)}"
+        )
 
-@app.get("/api/download-files/{project_id}")
-async def download_project_files(project_id: str):
-    """Download project files as ZIP package"""
+@app.get("/api/project/{project_id}", response_model=ProjectResponse)
+async def get_project(project_id: str):
+    """Get project details by ID"""
     try:
-        # Get project from MongoDB
-        project_doc = await database[PROJECTS_COLLECTION].find_one({"project_id": project_id})
-        if not project_doc:
-            raise HTTPException(status_code=404, detail="Project not found")
-        
-        project_data = ProjectInDB(**project_doc)
-        response_data = project_data.data["response"]
-        dwg_data = project_data.data["dwg_data"]
-        project_name = project_data.name
-        
-        # Create a ZIP file in memory
-        zip_buffer = io.BytesIO()
-        
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            # Add project summary JSON
-            project_summary = {
-                "project_name": project_name,
-                "project_id": project_id,
-                "coordinates": response_data["coordinates"],
-                "status": response_data["status"],
-                "created_at": response_data["created_at"],
-                "total_boundaries": len(response_data["boundaries"])
-            }
-            zip_file.writestr(
-                f"{project_name.replace(' ', '_')}_summary.json",
-                json.dumps(project_summary, indent=2)
+        # Validate project ID format
+        if not ValidationUtils.validate_project_id(project_id):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid project ID format"
             )
-            
-            # Add DWG-ready data
-            zip_file.writestr(
-                f"{project_name.replace(' ', '_')}_dwg_data.json",
-                json.dumps(dwg_data, indent=2)
-            )
-            
-            # Add detailed boundary data
-            boundaries_data = []
-            for boundary in response_data["boundaries"]:
-                boundaries_data.append({
-                    "layer_name": boundary["layer_name"],
-                    "layer_type": boundary["layer_type"],
-                    "geometry": boundary["geometry"],
-                    "properties": boundary["properties"],
-                    "source_api": boundary["source_api"]
-                })
-            
-            zip_file.writestr(
-                f"{project_name.replace(' ', '_')}_boundaries.json",
-                json.dumps(boundaries_data, indent=2)
-            )
-            
-            # Add coordinate reference file
-            coordinates_text = f"""Land Development Project: {project_name}
-Project ID: {project_id}
-Search Coordinates: {response_data["coordinates"]["latitude"]}, {response_data["coordinates"]["longitude"]}
-Date Generated: {response_data["created_at"]}
-Total Boundary Layers Found: {len(response_data["boundaries"])}
-
-Coordinate Reference System: WGS84 (EPSG:4326)
-Format: Decimal Degrees
-
-Boundary Types Found:
-"""
-            for boundary in response_data["boundaries"]:
-                coordinates_text += f"- {boundary['layer_type']}: {boundary['layer_name']}\n"
-            
-            zip_file.writestr(
-                f"{project_name.replace(' ', '_')}_coordinates.txt",
-                coordinates_text
-            )
-            
-            # Add README file
-            readme_content = f"""STIRLING BRIDGE LANDDEV - PROJECT FILES
-========================================
-
-Project Name: {project_name}
-Project ID: {project_id}
-Generated: {response_data["created_at"]}
-
-FILES INCLUDED:
-===============
-
-1. {project_name.replace(' ', '_')}_summary.json
-   - Project overview and metadata
-   - Coordinate information
-   - Boundary count summary
-
-2. {project_name.replace(' ', '_')}_dwg_data.json
-   - DWG-ready boundary data with layers
-   - Formatted for CAD software import
-   - Includes color coding and line weights
-
-3. {project_name.replace(' ', '_')}_boundaries.json
-   - Detailed boundary geometry data
-   - Property information and attributes
-   - Source API references
-
-4. {project_name.replace(' ', '_')}_coordinates.txt
-   - Human-readable coordinate information
-   - Project details and boundary summary
-   - Coordinate reference system info
-
-USAGE INSTRUCTIONS:
-==================
-
-For Architects & CAD Users:
-- Use the *_dwg_data.json file for importing into CAD software
-- Color codes and layer information are included
-- Coordinate system is WGS84 (EPSG:4326)
-
-For GIS Applications:
-- Use the *_boundaries.json file for detailed geometry
-- Contains full property attributes and metadata
-- Compatible with most GIS software
-
-For Project Management:
-- Reference the *_summary.json for project overview
-- Use coordinates.txt for quick reference information
-
-SUPPORT:
-========
-Generated by Stirling Bridge LandDev Platform
-For support, contact your development team
-"""
-            
-            zip_file.writestr("README.txt", readme_content)
         
-        zip_buffer.seek(0)
+        # Get project from database
+        project = await db_service.get_project(project_id)
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project {project_id} not found"
+            )
         
-        # Create filename
-        safe_project_name = project_name.replace(' ', '_').replace('/', '_')
-        filename = f"stirling_bridge_{safe_project_name}_{project_id[:8]}.zip"
+        # Convert to response format
+        boundaries = []
+        if project.data and project.data.get("boundaries"):
+            boundaries = project.data["boundaries"]
         
-        # Return the ZIP file as a streaming response
-        return StreamingResponse(
-            io.BytesIO(zip_buffer.read()),
-            media_type="application/zip",
-            headers={"Content-Disposition": f"attachment; filename=\"{filename}\""}
+        response = ProjectResponse(
+            id=project.project_id,
+            name=project.name,
+            coordinates=project.coordinates,
+            created=project.created,
+            lastModified=project.last_modified,
+            data=boundaries,
+            layers=project.layers
         )
         
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error generating download: {str(e)}")
-
-@app.get("/api/projects")
-async def list_projects():
-    """List all projects"""
-    try:
-        cursor = database[PROJECTS_COLLECTION].find({}, {"_id": 0})
-        projects = []
-        async for project_doc in cursor:
-            project_data = ProjectInDB(**project_doc)
-            projects.append(ProjectResponse(
-                id=project_data.project_id,
-                name=project_data.name,
-                coordinates=project_data.coordinates,
-                created=project_data.created,
-                lastModified=project_data.last_modified
-            ))
-        return {"projects": projects}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error listing projects: {str(e)}")
-
-@app.get("/api/project/{project_id}")
-async def get_project_data(project_id: str):
-    """Retrieve project data by ID"""
-    project_doc = await database[PROJECTS_COLLECTION].find_one({"project_id": project_id})
-    if not project_doc:
-        raise HTTPException(status_code=404, detail="Project not found")
-    
-    project_data = ProjectInDB(**project_doc)
-    response_data = project_data.data.get("response", {})
-    
-    return ProjectResponse(
-        id=project_data.project_id,
-        name=project_data.name,
-        coordinates=project_data.coordinates,
-        created=project_data.created,
-        lastModified=project_data.last_modified,
-        data=response_data.get("boundaries", []),  # Return the boundaries data
-        layers={}  # For future use
-    )
-
-@app.get("/api/debug/sanbi-services")
-async def debug_sanbi_services():
-    """Debug endpoint to check SANBI services configuration"""
-    return {
-        "services": list(SANBI_SERVICES.keys()),
-        "full_config": SANBI_SERVICES
-    }
-
-@app.get("/api/test/arcgis")
-async def test_arcgis_connection():
-    """Test ArcGIS API connection and return service status"""
-    try:
-        connection_status = await arcgis_service.test_connection()
-        return {
-            "arcgis_status": connection_status,
-            "available_services": arcgis_service.get_available_services()
-        }
-    except Exception as e:
-        return {
-            "error": str(e),
-            "status": "failed"
-        }
-
-@app.get("/api/arcgis/land-dev/{latitude}/{longitude}")
-async def get_arcgis_land_development_data(latitude: float, longitude: float):
-    """Get ArcGIS land development data for a specific location"""
-    try:
-        # Get comprehensive land development data from ArcGIS
-        data = await arcgis_service.get_land_development_data(latitude, longitude)
+        logger.info(f"Retrieved project: {project_id}")
+        return response
         
-        return {
-            "status": "success",
-            "location": {"latitude": latitude, "longitude": longitude},
-            "arcgis_data": data,
-            "total_features": data.get("total_features", 0)
-        }
+    except HTTPException:
+        raise
     except Exception as e:
-        return {
-            "status": "error", 
-            "error": str(e),
-            "location": {"latitude": latitude, "longitude": longitude}
-        }
+        logger.error(f"Failed to get project {project_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve project"
+        )
 
-@app.get("/api/download-cad/{project_id}")
-async def download_project_cad_files(project_id: str):
-    """Download professional CAD layers as ZIP package"""
-    project_doc = await database[PROJECTS_COLLECTION].find_one({"project_id": project_id})
-    if not project_doc:
-        raise HTTPException(status_code=404, detail="Project not found")
-    
-    project_data = ProjectInDB(**project_doc)
-    
-    # Get the stored response data
-    response_data = project_data.data.get("response", {})
-    boundaries = response_data.get("boundaries", [])
-    
-    if not boundaries:
-        raise HTTPException(status_code=404, detail="No project data found")
-    
+@app.get("/api/projects", response_model=ProjectListResponse)
+async def list_projects(limit: int = 100, skip: int = 0, search: Optional[str] = None):
+    """List projects with optional search and pagination"""
     try:
-        # Initialize CAD file manager
-        cad_manager = CADFileManager()
+        # Validate pagination parameters
+        if limit < 1 or limit > 1000:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Limit must be between 1 and 1000"
+            )
         
-        # Generate CAD layers
+        if skip < 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Skip must be non-negative"
+            )
+        
+        # Get projects from database
+        result = await db_service.list_projects(limit=limit, skip=skip, search_term=search)
+        
+        if not result["success"]:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=result.get("error", "Failed to retrieve projects")
+            )
+        
+        response = ProjectListResponse(
+            projects=result["projects"],
+            total_count=result["total_count"]
+        )
+        
+        logger.info(f"Listed {len(result['projects'])} projects")
+        return response
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to list projects: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve projects"
+        )
+
+@app.get("/api/download-files/{project_id}")
+async def download_files(project_id: str):
+    """Download CAD files for a project as ZIP package"""
+    try:
+        # Validate project ID
+        if not ValidationUtils.validate_project_id(project_id):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid project ID format"
+            )
+        
+        # Get project from database
+        project = await db_service.get_project(project_id)
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project {project_id} not found"
+            )
+        
+        # Get project boundaries for CAD generation
+        boundaries = []
+        if project.data and project.data.get("boundaries"):
+            boundaries = project.data["boundaries"]
+        
+        if not boundaries:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No boundary data available for this project"
+            )
+        
+        # Generate CAD files
         cad_files = await cad_manager.generate_project_cad_layers(
-            project_id, 
-            project_data.name, 
-            boundaries
+            project.project_id, project.name, boundaries
         )
         
         if not cad_files:
-            raise HTTPException(status_code=404, detail="No CAD layers could be generated")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to generate CAD files"
+            )
         
-        # Create CAD package ZIP
-        cad_zip_bytes = cad_manager.create_cad_package_zip(cad_files, project_data.name)
+        # Create ZIP package
+        zip_bytes = cad_manager.create_cad_package_zip(cad_files, project.name)
         
-        # Create filename
-        safe_project_name = project_data.name.replace(' ', '_').replace('/', '_')
-        filename = f"stirling_bridge_CAD_{safe_project_name}_{project_id[:8]}.zip"
+        # Sanitize filename
+        safe_project_name = ValidationUtils.sanitize_filename(project.name)
+        filename = f"{safe_project_name}_CAD_Package.zip"
         
-        # Return the CAD ZIP file
+        logger.info(f"Generated CAD package for project {project_id}: {filename}")
+        
+        # Return as streaming response
         return StreamingResponse(
-            io.BytesIO(cad_zip_bytes),
+            io.BytesIO(zip_bytes),
             media_type="application/zip",
             headers={"Content-Disposition": f"attachment; filename=\"{filename}\""}
         )
         
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error generating CAD files: {str(e)}")
+        logger.error(f"Failed to download files for project {project_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to generate download files"
+        )
 
-@app.get("/api/cad-layers/{project_id}")
-async def get_available_cad_layers(project_id: str):
-    """Get information about available CAD layers for a project"""
-    project_doc = await database[PROJECTS_COLLECTION].find_one({"project_id": project_id})
-    if not project_doc:
-        raise HTTPException(status_code=404, detail="Project not found")
-    
-    project_data = ProjectInDB(**project_doc)
-    response_data = project_data.data.get("response", {})
-    boundaries = response_data.get("boundaries", [])
-    
-    if not boundaries:
-        return {"available_layers": [], "total_boundaries": 0}
-    
-    # Analyze available data for CAD generation
-    contour_count = len([b for b in boundaries if b.get('layer_type') == 'Contours'])
-    property_boundary_count = len([b for b in boundaries if b.get('layer_type') == 'Property Boundaries'])
-    
-    available_layers = []
-    
-    if contour_count > 0:
-        available_layers.append({
-            "layer_type": "contours",
-            "layer_name": "SDP_GEO_CONT_MAJ_001",
-            "description": "Major Contours - Topographic elevation lines",
-            "entity_count": contour_count,
-            "geometry_type": "POLYLINE",
-            "color": "Cyan"
-        })
-    
-    if property_boundary_count > 0:
-        available_layers.extend([
-            {
-                "layer_type": "property_boundaries_draft",
-                "layer_name": "SDP_DRAFT_PROP_BOUND_001",
-                "description": "Property Boundaries - Draft site boundaries",
-                "entity_count": property_boundary_count,
-                "geometry_type": "POLYLINE", 
-                "color": "Red"
+@app.get("/api/statistics")
+async def get_statistics():
+    """Get application statistics"""
+    try:
+        db_stats = await db_service.get_project_statistics()
+        
+        return {
+            "application": {
+                "name": settings.app_name,
+                "version": settings.app_version,
+                "environment": settings.environment
             },
-            {
-                "layer_type": "property_boundaries_geo",
-                "layer_name": "SDP_GEO_PROP_BOUND_001",
-                "description": "Property Boundaries - Surveyed geospatial boundaries",
-                "entity_count": property_boundary_count,
-                "geometry_type": "POLYLINE",
-                "color": "Green"
-            }
-        ])
-    
-    return {
-        "project_id": project_id,
-        "project_name": project_data.name,
-        "available_layers": available_layers,
-        "total_boundaries": len(boundaries),
-        "cad_generation_ready": len(available_layers) > 0
-    }
+            "database": db_stats,
+            "configuration": {
+                "arcgis_configured": settings.has_arcgis_credentials,
+                "afrigis_configured": settings.has_afrigis_credentials,
+                "cache_ttl_seconds": settings.cache_ttl_seconds
+            },
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to get statistics: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve statistics"
+        )
 
-@app.get("/api/boundary-types")
-async def get_available_boundary_types():
-    """Get list of available boundary types that can be queried"""
-    return {
-        "csg_layers": BOUNDARY_LAYERS,
-        "additional_sources": [
-            "Municipal Boundaries",
-            "Ward Boundaries", 
-            "Conservation Areas",
-            "Agricultural Zones",
-            "Environmental Sensitive Areas",
-            "Heritage Sites"
-        ],
-        "note": "Additional sources are planned for future implementation"
-    }
+@app.exception_handler(ValueError)
+async def value_error_handler(request, exc):
+    """Handle validation errors"""
+    logger.warning(f"Validation error: {str(exc)}")
+    return ErrorResponse(
+        error="Validation Error",
+        detail=str(exc),
+        timestamp=datetime.now().isoformat()
+    )
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request, exc):
+    """Handle general exceptions"""
+    logger.error(f"Unhandled exception: {str(exc)}")
+    return ErrorResponse(
+        error="Internal Server Error",
+        detail="An unexpected error occurred" if settings.is_production else str(exc),
+        timestamp=datetime.now().isoformat()
+    )
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    uvicorn.run(
+        app,
+        host=settings.host,
+        port=settings.port,
+        log_level=settings.log_level.lower(),
+        reload=settings.is_development
+    )
