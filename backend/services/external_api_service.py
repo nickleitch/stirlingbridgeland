@@ -403,6 +403,19 @@ class ExternalAPIManager:
         except ImportError as e:
             self.open_topo_service = None
             logger.warning(f"Open Topo Data service not available: {e}")
+        
+        # Initialize Contour Generation service
+        try:
+            from .contour_service import ContourGenerationService
+            if self.open_topo_service:
+                self.contour_service = ContourGenerationService(self.open_topo_service)
+                logger.info("Contour Generation service initialized successfully")
+            else:
+                self.contour_service = None
+                logger.warning("Contour Generation service not available - requires Open Topo Data service")
+        except ImportError as e:
+            self.contour_service = None
+            logger.warning(f"Contour Generation service not available: {e}")
     
     def set_arcgis_service(self, arcgis_service):
         """Inject ArcGIS service"""
