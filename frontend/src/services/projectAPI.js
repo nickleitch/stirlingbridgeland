@@ -41,15 +41,15 @@ class ProjectAPIService {
   }
 
   async healthCheck() {
-    return this.makeRequest('/api/health');
+    return this.makeRequest('/health');
   }
 
   async getBoundaryTypes() {
-    return this.makeRequest('/api/boundary-types');
+    return this.makeRequest('/boundary-types');
   }
 
   async createProject(projectData) {
-    return this.makeRequest('/api/identify-land', {
+    return this.makeRequest('/identify-land', {
       method: 'POST',
       body: JSON.stringify({
         project_name: projectData.name,
@@ -60,7 +60,7 @@ class ProjectAPIService {
   }
 
   async loadProjectData(project) {
-    return this.makeRequest('/api/identify-land', {
+    return this.makeRequest('/identify-land', {
       method: 'POST',
       body: JSON.stringify({
         project_name: project.name,
@@ -71,7 +71,7 @@ class ProjectAPIService {
   }
 
   async getProject(projectId) {
-    return this.makeRequest(`/api/project/${projectId}`);
+    return this.makeRequest(`/project/${projectId}`);
   }
 
   async listProjects(limit = 100, skip = 0, search = null) {
@@ -84,7 +84,7 @@ class ProjectAPIService {
       params.append('search', search);
     }
 
-    return this.makeRequest(`/api/projects?${params.toString()}`);
+    return this.makeRequest(`/projects?${params.toString()}`);
   }
 
   async downloadCADFiles(projectId) {
