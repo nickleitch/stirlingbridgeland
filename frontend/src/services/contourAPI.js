@@ -41,7 +41,8 @@ export const contourAPI = {
         contour_interval: parseFloat(contour_interval),
         grid_size_km: parseFloat(grid_size_km),
         grid_points: parseInt(grid_points),
-        dataset: dataset
+        dataset: dataset,
+        property_boundaries: property_boundaries
       };
 
       console.log('Generating contours with params:', requestBody);
