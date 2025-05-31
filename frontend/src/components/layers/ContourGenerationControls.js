@@ -4,7 +4,6 @@ import { useProject } from '../../contexts/ProjectContext';
 
 const ContourGenerationControls = memo(({ layerId, layerName, onContourGenerated }) => {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState({
     contour_interval: 10.0,  // 10m intervals (safer default)
     grid_size_km: 2.0,       // 2km grid (focused coverage)
