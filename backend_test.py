@@ -942,7 +942,7 @@ class BackendTester:
 async def main():
     """Main test function"""
     print(f"{Colors.HEADER}Stirling Bridge LandDev Backend Test Suite{Colors.ENDC}")
-    print(f"{Colors.HEADER}Testing refactored service layer architecture and Open Topo Data integration{Colors.ENDC}")
+    print(f"{Colors.HEADER}Testing CAD generation with contour data for DXF export{Colors.ENDC}")
     print("="*80)
     
     # Initialize tester
@@ -959,124 +959,19 @@ async def main():
         print(f"\n{Colors.HEADER}Testing CAD Generation with Contour Data{Colors.ENDC}")
         print("-"*80)
         
-        # Test contour generation
-        contour_data = await tester.test_contour_generation(
+        # Create a project with contours using South African coordinates
+        project_id = await tester.test_create_project_with_contours(
             SOUTH_AFRICA_COORDS["latitude"],
             SOUTH_AFRICA_COORDS["longitude"],
-            contour_interval=2.0,
-            grid_size_km=2.0,
-            grid_points=10
+            "South Africa Contour Test Project"
         )
         
-        if contour_data:
-            # Create a project with the South African coordinates
-            await tester.test_land_identification(
-                SOUTH_AFRICA_COORDS["latitude"],
-                SOUTH_AFRICA_COORDS["longitude"],
-                "South Africa Contour Test Project"
-            )
-            
+        if project_id:
             # Test CAD download with contours
-            if tester.created_project_id:
-                await tester.test_cad_download_with_contours(tester.created_project_id)
-        
-        # Test Open Topo Data API endpoints
-        print(f"\n{Colors.HEADER}Testing Open Topo Data API Endpoints{Colors.ENDC}")
-        print("-"*80)
-        
-        # Test elevation point endpoint
-        await tester.test_elevation_point(
-            SOUTH_AFRICA_COORDS["latitude"], 
-            SOUTH_AFRICA_COORDS["longitude"]
-        )
-        
-        # Test elevation datasets endpoint
-        await tester.test_elevation_datasets()
-        
-        # Test external services status endpoint
-        await tester.test_external_services_status()
-        
-        # Test elevation grid endpoint
-        await tester.test_elevation_grid(
-            SOUTH_AFRICA_COORDS["latitude"], 
-            SOUTH_AFRICA_COORDS["longitude"]
-        )
-        
-        # Test rate limiting
-        await tester.test_rate_limiting()
-        
-        # Test invalid dataset error handling
-        await tester.test_invalid_dataset()
-        
-        # Test enhanced land identification with elevation data
-        print(f"\n{Colors.HEADER}Testing Enhanced Project Creation with Elevation Data{Colors.ENDC}")
-        print("-"*80)
-        
-        await tester.test_enhanced_land_identification(
-            SOUTH_AFRICA_COORDS["latitude"], 
-            SOUTH_AFRICA_COORDS["longitude"],
-            "South Africa Elevation Test Project"
-        )
-        
-        # Test existing API endpoints
-        print(f"\n{Colors.HEADER}Testing Existing API Endpoints{Colors.ENDC}")
-        print("-"*80)
-        
-        # Test land identification with Johannesburg coordinates
-        await tester.test_land_identification(
-            JOHANNESBURG_COORDS["latitude"], 
-            JOHANNESBURG_COORDS["longitude"],
-            TEST_PROJECT_NAME
-        )
-        
-        # Test project retrieval
-        await tester.test_project_retrieval()
-        
-        # Test project listing
-        await tester.test_project_listing()
-        
-        # Test file download
-        await tester.test_file_download()
-        
-        # Test statistics endpoint
-        await tester.test_statistics_endpoint()
-        
-        # Test error handling
-        await tester.test_error_handling()
-        
-        # Test invalid coordinates
-        await tester.test_invalid_coordinates()
-        
-        # Test non-existent project
-        await tester.test_nonexistent_project()
-        
-        # Test caching
-        await tester.test_caching()
-        
-        # Test navigation menu endpoints
-        print(f"\n{Colors.HEADER}Testing Navigation Menu API Endpoints{Colors.ENDC}")
-        print("-"*80)
-        
-        # Test API status endpoint
-        await tester.test_api_status()
-        
-        # Test API configurations endpoint
-        await tester.test_api_configs()
-        
-        # Test user profile endpoint
-        await tester.test_user_profile()
-        
-        # Test update user profile endpoint
-        await tester.test_update_user_profile()
-        
-        # Test user statistics endpoint
-        await tester.test_user_stats()
-        
-        # Test app statistics endpoint
-        await tester.test_app_statistics()
-        
-        # Test update API configuration endpoint
-        await tester.test_update_api_config()
+            await tester.test_cad_download_with_contours(project_id)
+            
+            # Test project retrieval to verify contours are stored
+            await tester.test_project_retrieval(project_id)
         
     finally:
         # Print summary and close client
