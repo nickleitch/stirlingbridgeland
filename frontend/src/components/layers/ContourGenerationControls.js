@@ -70,13 +70,20 @@ const ContourGenerationControls = memo(({ layerId, layerName, onContourGenerated
     setIsGenerating(true);
     
     try {
+      // Get property boundaries from current project (only Farm Portions and Erven)
+      const propertyBoundaries = (currentProject.data || []).filter(boundary => 
+        boundary.layer_type === 'Farm Portions' || boundary.layer_type === 'Erven'
+      );
+
       const params = {
         latitude: currentProject.coordinates.latitude,
         longitude: currentProject.coordinates.longitude,
+        property_boundaries: propertyBoundaries,  // Pass boundaries for filtering
         ...settings
       };
 
       console.log('Generating contours for project:', currentProject.name, 'with params:', params);
+      console.log(`Using ${propertyBoundaries.length} property boundaries for filtering`);
 
       const response = await contourAPI.generateContours(params);
 
@@ -94,9 +101,9 @@ const ContourGenerationControls = memo(({ layerId, layerName, onContourGenerated
           }
 
           console.log(`Generated ${contourBoundaries.length} contour boundaries`);
-          alert(`Successfully generated ${contourBoundaries.length} contour lines with ${settings.contour_interval}m intervals`);
+          alert(`Successfully generated ${contourBoundaries.length} contour lines with ${settings.contour_interval}m intervals (filtered to property boundaries)`);
         } else {
-          alert('No contour lines were generated for this area');
+          alert('No contour lines were generated within the property boundaries');
         }
       } else {
         throw new Error(response.error);
