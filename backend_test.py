@@ -910,6 +910,31 @@ async def main():
         # Test boundary types
         await tester.test_boundary_types()
         
+        # Test CAD generation with contour data
+        print(f"\n{Colors.HEADER}Testing CAD Generation with Contour Data{Colors.ENDC}")
+        print("-"*80)
+        
+        # Test contour generation
+        contour_data = await tester.test_contour_generation(
+            SOUTH_AFRICA_COORDS["latitude"],
+            SOUTH_AFRICA_COORDS["longitude"],
+            contour_interval=2.0,
+            grid_size_km=2.0,
+            grid_points=10
+        )
+        
+        if contour_data:
+            # Create a project with the South African coordinates
+            await tester.test_land_identification(
+                SOUTH_AFRICA_COORDS["latitude"],
+                SOUTH_AFRICA_COORDS["longitude"],
+                "South Africa Contour Test Project"
+            )
+            
+            # Test CAD download with contours
+            if tester.created_project_id:
+                await tester.test_cad_download_with_contours(tester.created_project_id)
+        
         # Test Open Topo Data API endpoints
         print(f"\n{Colors.HEADER}Testing Open Topo Data API Endpoints{Colors.ENDC}")
         print("-"*80)
