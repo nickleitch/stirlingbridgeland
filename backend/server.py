@@ -628,6 +628,117 @@ async def get_available_datasets():
             detail="Failed to retrieve dataset information"
         )
 
+# ================================
+# Contour Generation API Endpoints  
+# ================================
+
+@app.post("/api/contours/generate")
+async def generate_contours(request: dict):
+    """Generate elevation contour lines for a specified area"""
+    try:
+        if not api_manager.contour_service:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Contour generation service not available"
+            )
+        
+        # Extract parameters
+        center_lat = request.get("latitude")
+        center_lng = request.get("longitude")
+        contour_interval = request.get("contour_interval", 2.0)
+        grid_size_km = request.get("grid_size_km", 3.0)
+        grid_points = request.get("grid_points", 15)
+        dataset = request.get("dataset", "srtm30m")
+        
+        if center_lat is None or center_lng is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Latitude and longitude are required"
+            )
+        
+        # Validate parameters
+        if not (-90 <= center_lat <= 90):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid latitude. Must be between -90 and 90"
+            )
+        
+        if not (-180 <= center_lng <= 180):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid longitude. Must be between -180 and 180"
+            )
+        
+        if contour_interval <= 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Contour interval must be positive"
+            )
+        
+        logger.info(f"Generating contours for {center_lat}, {center_lng} with {contour_interval}m intervals")
+        
+        # Generate contours
+        contour_response = await api_manager.contour_service.generate_contours(
+            center_lat=center_lat,
+            center_lng=center_lng,
+            contour_interval=contour_interval,
+            grid_size_km=grid_size_km,
+            grid_points=grid_points,
+            dataset=dataset
+        )
+        
+        if not contour_response.success:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Contour generation failed: {contour_response.error}"
+            )
+        
+        return {
+            "success": True,
+            "contour_data": contour_response.data,
+            "message": f"Generated {len(contour_response.data.get('contour_lines', []))} contour lines",
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Contour generation failed: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to generate contour lines"
+        )
+
+@app.get("/api/contours/styles")
+async def get_contour_styles():
+    """Get available contour line styling options"""
+    try:
+        if not api_manager.contour_service:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Contour generation service not available"
+            )
+        
+        return {
+            "contour_styles": api_manager.contour_service.get_contour_styles(),
+            "default_interval": api_manager.contour_service.default_contour_interval,
+            "supported_intervals": [0.5, 1.0, 2.0, 5.0, 10.0, 20.0],
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get contour styles: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve contour styling information"
+        )
+
+# ================================
+# External Services API Endpoints
+# ================================
+
 @app.get("/api/external-services/status")
 async def get_external_services_status():
     """Get status of all external API services including Open Topo Data"""
