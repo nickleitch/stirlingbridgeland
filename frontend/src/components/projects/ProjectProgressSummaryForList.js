@@ -250,7 +250,14 @@ const ProjectProgressSummaryForList = memo(({ project, onSelect }) => {
   if (!project) return null;
 
   return (
-    <div 
+    <>
+      <DeleteConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={confirmDelete}
+        projectName={project.name}
+      />
+      <div 
       className="bg-white rounded-xl shadow-lg p-6 mb-6 cursor-pointer hover:shadow-xl transition-all transform hover:scale-[1.01] border border-gray-100"
       onClick={handleProjectClick}
       role="button"
