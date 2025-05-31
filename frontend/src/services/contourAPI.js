@@ -44,7 +44,10 @@ export const contourAPI = {
 
       console.log('Generating contours with params:', requestBody);
 
-      const response = await fetch(`${BACKEND_URL}/api/contours/generate`, {
+      const apiUrl = constructApiUrl('/contours/generate');
+      console.log('Making contour API request to:', apiUrl);
+      
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
