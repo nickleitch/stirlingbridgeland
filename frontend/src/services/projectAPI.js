@@ -104,13 +104,13 @@ class ProjectAPIService {
   }
 
   async deleteProject(projectId) {
-    return this.makeRequest(`/api/projects/${projectId}`, {
+    return this.makeRequest(`/projects/${projectId}`, {
       method: 'DELETE'
     });
   }
 
   async getStatistics() {
-    return this.makeRequest('/api/statistics');
+    return this.makeRequest('/statistics');
   }
 
   // Validation helpers
