@@ -12,7 +12,7 @@ class ProjectAPIService {
 
   async makeRequest(endpoint, options = {}) {
     try {
-      const url = `${this.baseURL}${endpoint}`;
+      const url = `${this.baseURL}/api${endpoint}`;
       const response = await fetch(url, {
         headers: {
           'Content-Type': 'application/json',
