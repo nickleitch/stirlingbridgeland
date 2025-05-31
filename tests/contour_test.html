@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contour Generation Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            padding: 15px;
+            background-color: #f9f9f9;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+        .loading {
+            display: none;
+            margin-top: 20px;
+            text-align: center;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Contour Generation Test</h1>
+    <p>This page tests the contour generation API directly.</p>
+    
+    <div class="form-group">
+        <label for="latitude">Latitude:</label>
+        <input type="number" id="latitude" step="any" value="-29.4828">
+    </div>
+    
+    <div class="form-group">
+        <label for="longitude">Longitude:</label>
+        <input type="number" id="longitude" step="any" value="31.205">
+    </div>
+    
+    <div class="form-group">
+        <label for="contourInterval">Contour Interval:</label>
+        <input type="number" id="contourInterval" step="any" value="2.0">
+    </div>
+    
+    <div class="form-group">
+        <label for="gridSize">Grid Size (km):</label>
+        <input type="number" id="gridSize" step="any" value="2.0">
+    </div>
+    
+    <div class="form-group">
+        <label for="gridPoints">Grid Points:</label>
+        <input type="number" id="gridPoints" value="10">
+    </div>
+    
+    <button id="generateBtn">Generate Contours</button>
+    
+    <div id="loading" class="loading">
+        Generating contours... Please wait.
+    </div>
+    
+    <div id="result"></div>
+    
+    <script>
+        document.getElementById('generateBtn').addEventListener('click', async function() {
+            const resultDiv = document.getElementById('result');
+            const loadingDiv = document.getElementById('loading');
+            
+            // Get form values
+            const latitude = parseFloat(document.getElementById('latitude').value);
+            const longitude = parseFloat(document.getElementById('longitude').value);
+            const contourInterval = parseFloat(document.getElementById('contourInterval').value);
+            const gridSize = parseFloat(document.getElementById('gridSize').value);
+            const gridPoints = parseInt(document.getElementById('gridPoints').value);
+            
+            // Validate inputs
+            if (isNaN(latitude) || isNaN(longitude) || isNaN(contourInterval) || isNaN(gridSize) || isNaN(gridPoints)) {
+                resultDiv.innerHTML = '<span class="error">Please enter valid numbers for all fields.</span>';
+                return;
+            }
+            
+            // Show loading indicator
+            loadingDiv.style.display = 'block';
+            resultDiv.innerHTML = '';
+            
+            try {
+                // Make API request
+                const response = await fetch('https://f187ce63-b867-4efc-8661-e8c6f8a43508.preview.emergentagent.com/api/contours/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        latitude: latitude,
+                        longitude: longitude,
+                        contour_interval: contourInterval,
+                        grid_size_km: gridSize,
+                        grid_points: gridPoints
+                    })
+                });
+                
+                // Parse response
+                const data = await response.json();
+                
+                // Display result
+                if (data.success) {
+                    const contourLines = data.contour_data.contour_lines || [];
+                    resultDiv.innerHTML = `
+                        <span class="success">Success! Generated ${contourLines.length} contour lines.</span>
+                        <h3>Response:</h3>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <span class="error">Error generating contours.</span>
+                        <h3>Response:</h3>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">Error: ${error.message}</span>`;
+            } finally {
+                // Hide loading indicator
+                loadingDiv.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
