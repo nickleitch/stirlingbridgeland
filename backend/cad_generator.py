@@ -291,13 +291,14 @@ class CADFileManager:
         
         # Categorize boundaries by type
         contour_boundaries = [b for b in boundaries if b.get('layer_type') == 'Contours']
+        generated_contour_boundaries = [b for b in boundaries if b.get('layer_type') == 'Generated Contours']
         property_boundaries = [b for b in boundaries if b.get('layer_type') == 'Property Boundaries']
         admin_boundaries = [b for b in boundaries if b.get('layer_type') == 'Administrative Boundaries']
         urban_boundaries = [b for b in boundaries if b.get('layer_type') == 'Urban Planning']
         infrastructure_boundaries = [b for b in boundaries if b.get('layer_type') == 'Infrastructure']
         demographics_boundaries = [b for b in boundaries if b.get('layer_type') == 'Demographics']
         
-        # Generate contours layer
+        # Generate contours layer (traditional)
         if contour_boundaries:
             try:
                 filename, file_bytes = generator.create_layer_dwg(
@@ -308,6 +309,18 @@ class CADFileManager:
                 cad_files["contours"] = (filename, file_bytes)
             except Exception as e:
                 print(f"Error generating contours CAD layer: {str(e)}")
+        
+        # Generate generated contours layer (professional contour generation)
+        if generated_contour_boundaries:
+            try:
+                filename, file_bytes = generator.create_layer_dwg(
+                    "generated_contours",
+                    generated_contour_boundaries,
+                    "Stirling Bridge LandDev Platform - Professional Contour Generation Service"
+                )
+                cad_files["generated_contours"] = (filename, file_bytes)
+            except Exception as e:
+                print(f"Error generating generated contours CAD layer: {str(e)}")
         
         # Generate property boundaries layers (both draft and geo versions)
         if property_boundaries:
