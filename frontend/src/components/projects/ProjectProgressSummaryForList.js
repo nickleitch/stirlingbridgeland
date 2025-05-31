@@ -1,6 +1,6 @@
 import React, { memo, useMemo, useState } from 'react';
 import { LAYER_SECTIONS } from '../../config/layerConfig';
-import { useProject } from '../../hooks/useProject';
+import { useProject } from '../../contexts/ProjectContext';
 
 const DeleteConfirmationModal = memo(({ isOpen, onClose, onConfirm, projectName }) => {
   if (!isOpen) return null;
