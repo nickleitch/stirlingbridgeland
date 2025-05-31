@@ -48,52 +48,50 @@ const DeleteConfirmationModal = memo(({ isOpen, onClose, onConfirm, projectName 
 DeleteConfirmationModal.displayName = 'DeleteConfirmationModal';
 
 const ProgressCircle = memo(({ percentage, title, onClick, size = 'default' }) => {
-  const radius = 20;
-  const stroke = 3;
-  const normalizedRadius = radius - stroke * 2;
-  const circumference = normalizedRadius * 2 * Math.PI;
-  const strokeDasharray = `${circumference} ${circumference}`;
-  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+  const numSegments = 10;
+  const filledSegments = Math.round((percentage / 100) * numSegments);
   
-  const segments = [];
-  const segmentCount = 8;
-  const segmentAngle = 360 / segmentCount;
-  const gapAngle = 4; // Degrees
+  // Size configurations
+  const sizeConfig = {
+    small: { radius: 20, centerX: 25, centerY: 25, viewBox: "0 0 50 50", strokeWidth: 4 },
+    default: { radius: 30, centerX: 35, centerY: 35, viewBox: "0 0 70 70", strokeWidth: 6 },
+    responsive: { radius: 20, centerX: 25, centerY: 25, viewBox: "0 0 50 50", strokeWidth: 4 }
+  };
   
-  for (let i = 0; i < segmentCount; i++) {
-    const startAngle = i * segmentAngle;
-    const endAngle = startAngle + segmentAngle - gapAngle;
-    const progress = Math.max(0, Math.min(1, (percentage - i * (100 / segmentCount)) / (100 / segmentCount)));
-    
-    if (progress > 0) {
-      const actualEndAngle = startAngle + (endAngle - startAngle) * progress;
-      
-      const x1 = 50 + 40 * Math.cos((startAngle - 90) * Math.PI / 180);
-      const y1 = 50 + 40 * Math.sin((startAngle - 90) * Math.PI / 180);
-      const x2 = 50 + 40 * Math.cos((actualEndAngle - 90) * Math.PI / 180);
-      const y2 = 50 + 40 * Math.sin((actualEndAngle - 90) * Math.PI / 180);
-      
-      const largeArcFlag = actualEndAngle - startAngle <= 180 ? "0" : "1";
-      
-      const pathData = [
-        "M", 50, 50,
-        "L", x1, y1,
-        "A", 40, 40, 0, largeArcFlag, 1, x2, y2,
-        "Z"
-      ].join(" ");
-      
-      segments.push(
-        <path
-          key={i}
-          d={pathData}
-          fill="#4a9b9e"
-          fillOpacity={0.8}
-        />
-      );
-    }
-  }
+  const config = sizeConfig[size];
+  const segmentAngle = 360 / numSegments;
+  const gapAngle = 3;
 
-  const viewBox = "0 0 100 100";
+  const segments = [];
+  
+  for (let i = 0; i < numSegments; i++) {
+    const startAngle = i * segmentAngle + gapAngle / 2;
+    const endAngle = (i + 1) * segmentAngle - gapAngle / 2;
+    
+    const startRad = (startAngle * Math.PI) / 180;
+    const endRad = (endAngle * Math.PI) / 180;
+    
+    const x1 = config.centerX + config.radius * Math.cos(startRad);
+    const y1 = config.centerY + config.radius * Math.sin(startRad);
+    const x2 = config.centerX + config.radius * Math.cos(endRad);
+    const y2 = config.centerY + config.radius * Math.sin(endRad);
+    
+    const largeArc = endAngle - startAngle > 180 ? 1 : 0;
+    const pathData = `M ${x1} ${y1} A ${config.radius} ${config.radius} 0 ${largeArc} 1 ${x2} ${y2}`;
+    
+    const isFilled = i < filledSegments;
+    
+    segments.push(
+      <path
+        key={i}
+        d={pathData}
+        fill="none"
+        strokeWidth={config.strokeWidth}
+        strokeLinecap="butt"
+        stroke={isFilled ? '#4a9b9e' : '#d4d4d8'}
+      />
+    );
+  }
   
   const containerSizeClass = {
     small: "w-12 h-12",
@@ -120,7 +118,7 @@ const ProgressCircle = memo(({ percentage, title, onClick, size = 'default' }) =
     >
       <div className={`progress-circle relative ${containerSizeClass[size]} mx-auto mb-2`}>
         <svg 
-          viewBox={viewBox}
+          viewBox={config.viewBox}
           className="w-full h-full transform -rotate-90"
         >
           {segments}
