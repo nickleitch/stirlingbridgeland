@@ -140,7 +140,7 @@ const ProgressCircle = memo(({ percentage, title, onClick, size = 'default' }) =
 ProgressCircle.displayName = 'ProgressCircle';
 
 const ProjectProgressSummaryForList = memo(({ project, onSelect }) => {
-  const { deleteProject, loading } = useProject();
+  const { deleteProject } = useProject();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -155,6 +155,7 @@ const ProjectProgressSummaryForList = memo(({ project, onSelect }) => {
       const result = await deleteProject(project.id);
       if (result.success) {
         console.log(`Project "${project.name}" deleted successfully`);
+        // The project will be automatically removed from the list by the ProjectContext
       } else {
         alert(`Failed to delete project: ${result.error}`);
       }
