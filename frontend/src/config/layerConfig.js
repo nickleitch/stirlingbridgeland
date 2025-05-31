@@ -79,6 +79,7 @@ export const LAYER_TYPE_MAPPING = {
   'Public Places': 'property_boundaries',
   'Roads': 'roads_existing',
   'Contours': ['topography_basic', 'contours_major'],
+  'Generated Contours': 'generated_contours',
   'Elevation Data': 'elevation_data',
   'Water Bodies': 'water_bodies',
   'Environmental Constraints': 'environmental_constraints'
