@@ -105,7 +105,7 @@ class ContourGenerationService:
             
             # Generate contour lines
             contour_lines = self._generate_contour_lines(
-                elevation_grid, grid_metadata, interval
+                elevation_grid, grid_metadata, interval, property_boundaries
             )
             
             # Convert to GeoJSON format
