@@ -114,7 +114,7 @@ const ContourGenerationControls = memo(({ layerId, layerName, onContourGenerated
       <div className="flex items-center space-x-1">
         {/* Generate Button */}
         <button
-          onClick={handleGenerateContours}
+          onClick={() => setShowSettings(true)}
           disabled={isGenerating || !currentProject}
           className="p-1 rounded hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           title="Generate Contours"
