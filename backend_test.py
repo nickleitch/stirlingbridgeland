@@ -794,6 +794,21 @@ class BackendTester:
         try:
             print(f"Testing CAD download with contours for project: {project_id}")
             
+            # First, get the project data to check if it has contours
+            project_response = await self.client.get(f"{self.base_url}/project/{project_id}")
+            if project_response.status_code != 200:
+                self.log_test("CAD Download with Contours", False, 
+                             f"Failed to get project data: {project_response.status_code}", start_time - time.time())
+                return False
+                
+            project_data = project_response.json()
+            boundaries = project_data.get("data", [])
+            
+            # Check if project has contour boundaries
+            contour_boundaries = [b for b in boundaries if b.get("layer_type") == "Generated Contours"]
+            print(f"Project has {len(contour_boundaries)} contour boundaries")
+            
+            # Now download the CAD files
             response = await self.client.get(f"{self.base_url}/download-files/{project_id}")
             response_time = time.time() - start_time
             
@@ -819,8 +834,12 @@ class BackendTester:
                 for filename in file_list:
                     print(f"  - {filename}")
                 
-                # Check if we have a contour layer file
-                contour_files = [f for f in file_list if "CONT" in f]
+                # Check if we have a contour layer file (specifically looking for generated contours)
+                contour_files = [f for f in file_list if "CONT_GEN" in f]
+                if not contour_files:
+                    # Try a more general search if specific naming not found
+                    contour_files = [f for f in file_list if "CONT" in f]
+                
                 if contour_files:
                     print(f"Found contour files: {contour_files}")
                     
@@ -832,7 +851,7 @@ class BackendTester:
                     # Check file size
                     file_size = os.path.getsize(contour_file)
                     
-                    # Basic file content check
+                    # Detailed file content check
                     with open(contour_file, 'r') as f:
                         content = f.read()
                         
@@ -842,11 +861,25 @@ class BackendTester:
                         has_polylines = "LWPOLYLINE" in content
                         # Check for metadata
                         has_metadata = "STIRLING_BRIDGE_METADATA" in content
+                        # Check for generated contours layer name
+                        has_contour_layer = "SDP_GEO_CONT_GEN_001" in content
+                        # Count polylines (rough estimate)
+                        polyline_count = content.count("LWPOLYLINE")
+                        
+                        # Check for contour-specific metadata
+                        has_contour_metadata = "LAYER_TYPE:Generated Contours" in content
                         
                         details = f"Found {len(contour_files)} contour files, Size: {file_size} bytes"
-                        details += f", Has sections: {has_sections}, Has polylines: {has_polylines}, Has metadata: {has_metadata}"
+                        details += f", Has sections: {has_sections}, Has polylines: {has_polylines} (count: {polyline_count})"
+                        details += f", Has metadata: {has_metadata}, Has contour layer: {has_contour_layer}"
+                        details += f", Has contour metadata: {has_contour_metadata}"
                         
-                        if has_sections and has_polylines:
+                        # Compare polyline count with expected contour boundaries
+                        if len(contour_boundaries) > 0:
+                            details += f", Expected contours: {len(contour_boundaries)}"
+                            
+                        # Check if the file has the expected contour data
+                        if has_sections and has_polylines and has_contour_layer and polyline_count > 0:
                             self.log_test("CAD Download with Contours", True, details, response_time)
                             return True
                         else:
