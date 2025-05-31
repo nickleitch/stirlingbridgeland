@@ -677,15 +677,18 @@ async def generate_contours(request: dict):
             )
         
         logger.info(f"Generating contours for {center_lat}, {center_lng} with {contour_interval}m intervals")
+        if property_boundaries:
+            logger.info(f"Filtering contours using {len(property_boundaries)} property boundaries")
         
-        # Generate contours
+        # Generate contours (with property boundary filtering)
         contour_response = await api_manager.contour_service.generate_contours(
             center_lat=center_lat,
             center_lng=center_lng,
             contour_interval=contour_interval,
             grid_size_km=grid_size_km,
             grid_points=grid_points,
-            dataset=dataset
+            dataset=dataset,
+            property_boundaries=property_boundaries
         )
         
         if not contour_response.success:
