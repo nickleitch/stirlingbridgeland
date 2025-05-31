@@ -122,7 +122,13 @@ export const contourAPI = {
       const apiUrl = constructApiUrl('/elevation/datasets');
       console.log('Getting elevation datasets from:', apiUrl);
       
-      const response = await fetch(apiUrl);
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        mode: 'cors'
+      });
       const data = await response.json();
 
       if (!response.ok) {
