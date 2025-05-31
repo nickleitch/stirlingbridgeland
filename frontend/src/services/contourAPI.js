@@ -3,15 +3,16 @@
  * Handles frontend communication with the contour generation backend
  */
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
-console.log('ContourAPI initialized with BACKEND_URL:', BACKEND_URL);
+const BACKEND_URL = import.meta.env.REACT_APP_BACKEND_URL || process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
 
-// Helper function to construct API URL
+console.log('ContourAPI initialized with backend URL:', BACKEND_URL);
+
+// Helper function to construct API URLs
 const constructApiUrl = (endpoint) => {
-  // Don't add /api prefix if the baseURL already includes it
-  return BACKEND_URL.endsWith('/api') 
+  const url = BACKEND_URL.endsWith('/api') 
     ? `${BACKEND_URL}${endpoint}`
     : `${BACKEND_URL}/api${endpoint}`;
+  return url;
 };
 
 export const contourAPI = {
