@@ -411,6 +411,18 @@ Stirling Bridge LandDev App - Complete Development Summary: Professional-grade l
           agent: "testing"
           comment: "Successfully tested error handling for the contour generation endpoint. The endpoint properly validates input parameters and returns appropriate error messages for invalid coordinates (outside -90 to 90 range) and negative contour intervals. All error responses include detailed error messages and 400 status codes."
 
+  - task: "CAD Generation with Contour Data"
+    implemented: true
+    working: true
+    file: "/app/backend/cad_generator.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Successfully tested the CAD generation functionality with contour data. The system correctly handles GeoJSON LineString features from the contour generation service. Generated contours for South African coordinates (-29.4828, 31.205) with 787 contour lines. Created a test project with the contour data and successfully exported it to a DXF file. The DXF file was properly formatted with sections, polylines, and metadata. The contour lines were correctly exported as polylines with elevation metadata. The fix for handling GeoJSON LineString features in the _add_boundary_to_layer method is working correctly."
+
 ## frontend:
   - task: "Contour Generation Feature"
     implemented: true
