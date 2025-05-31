@@ -36,6 +36,13 @@ class SDPLayerGenerator:
                 "geometry_type": "POLYLINE",
                 "metadata_fields": ["elevation", "contour_type", "interval_m", "accuracy", "survey_method"]
             },
+            "generated_contours": {
+                "name": "SDP_GEO_CONT_GEN_001",
+                "description": "Generated Contours - Professional elevation contour lines",
+                "color": 14,  # Yellow-orange
+                "geometry_type": "POLYLINE", 
+                "metadata_fields": ["elevation", "contour_type", "contour_interval", "dataset", "generation_method"]
+            },
             "property_boundaries_draft": {
                 "name": "SDP_DRAFT_PROP_BOUND_001", 
                 "description": "Property Boundaries - Draft site boundaries",
