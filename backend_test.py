@@ -679,8 +679,8 @@ class BackendTester:
             contour_data = await self.test_contour_generation(
                 latitude, longitude, 
                 contour_interval=2.0, 
-                grid_size_km=3.0, 
-                grid_points=15
+                grid_size_km=1.0, 
+                grid_points=9  # Reduced from 15 to stay under 100 coordinate limit
             )
             
             if not contour_data or not contour_data.get("success", False):
