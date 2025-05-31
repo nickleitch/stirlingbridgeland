@@ -48,64 +48,63 @@ const DeleteConfirmationModal = memo(({ isOpen, onClose, onConfirm, projectName 
 DeleteConfirmationModal.displayName = 'DeleteConfirmationModal';
 
 const ProgressCircle = memo(({ percentage, title, onClick, size = 'default' }) => {
-  const numSegments = 10;
-  const filledSegments = Math.round((percentage / 100) * numSegments);
+  const radius = 20;
+  const stroke = 3;
+  const normalizedRadius = radius - stroke * 2;
+  const circumference = normalizedRadius * 2 * Math.PI;
+  const strokeDasharray = `${circumference} ${circumference}`;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
   
-  // Responsive sizing based on screen and size prop
-  const sizeConfig = {
-    small: { radius: 24, centerX: 30, centerY: 30, strokeWidth: 5, viewBox: "0 0 60 60" },
-    default: { radius: 36, centerX: 45, centerY: 45, strokeWidth: 8, viewBox: "0 0 90 90" },
-    responsive: { radius: 30, centerX: 37.5, centerY: 37.5, strokeWidth: 6, viewBox: "0 0 75 75" }
-  };
-  
-  const config = sizeConfig[size] || sizeConfig.default;
-  const { radius, centerX, centerY, strokeWidth, viewBox } = config;
-  
-  const segmentAngle = 360 / numSegments;
-  const gapAngle = 3;
-
   const segments = [];
+  const segmentCount = 8;
+  const segmentAngle = 360 / segmentCount;
+  const gapAngle = 4; // Degrees
   
-  for (let i = 0; i < numSegments; i++) {
-    const startAngle = i * segmentAngle + gapAngle / 2;
-    const endAngle = (i + 1) * segmentAngle - gapAngle / 2;
+  for (let i = 0; i < segmentCount; i++) {
+    const startAngle = i * segmentAngle;
+    const endAngle = startAngle + segmentAngle - gapAngle;
+    const progress = Math.max(0, Math.min(1, (percentage - i * (100 / segmentCount)) / (100 / segmentCount)));
     
-    const startRad = (startAngle * Math.PI) / 180;
-    const endRad = (endAngle * Math.PI) / 180;
-    
-    const x1 = centerX + radius * Math.cos(startRad);
-    const y1 = centerY + radius * Math.sin(startRad);
-    const x2 = centerX + radius * Math.cos(endRad);
-    const y2 = centerY + radius * Math.sin(endRad);
-    
-    const largeArc = endAngle - startAngle > 180 ? 1 : 0;
-    const pathData = `M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2}`;
-    
-    const isFilled = i < filledSegments;
-    
-    segments.push(
-      <path
-        key={i}
-        className={`segment ${isFilled ? 'filled-segment' : 'bg-segment'}`}
-        d={pathData}
-        fill="none"
-        strokeWidth={strokeWidth}
-        strokeLinecap="butt"
-        stroke={isFilled ? '#4a9b9e' : '#d4d4d8'}
-      />
-    );
+    if (progress > 0) {
+      const actualEndAngle = startAngle + (endAngle - startAngle) * progress;
+      
+      const x1 = 50 + 40 * Math.cos((startAngle - 90) * Math.PI / 180);
+      const y1 = 50 + 40 * Math.sin((startAngle - 90) * Math.PI / 180);
+      const x2 = 50 + 40 * Math.cos((actualEndAngle - 90) * Math.PI / 180);
+      const y2 = 50 + 40 * Math.sin((actualEndAngle - 90) * Math.PI / 180);
+      
+      const largeArcFlag = actualEndAngle - startAngle <= 180 ? "0" : "1";
+      
+      const pathData = [
+        "M", 50, 50,
+        "L", x1, y1,
+        "A", 40, 40, 0, largeArcFlag, 1, x2, y2,
+        "Z"
+      ].join(" ");
+      
+      segments.push(
+        <path
+          key={i}
+          d={pathData}
+          fill="#4a9b9e"
+          fillOpacity={0.8}
+        />
+      );
+    }
   }
 
+  const viewBox = "0 0 100 100";
+  
   const containerSizeClass = {
-    small: "w-[60px] h-[60px]",
-    default: "w-[90px] h-[90px]",
-    responsive: "w-[75px] h-[75px] xl:w-[90px] xl:h-[90px]"
+    small: "w-12 h-12",
+    default: "w-16 h-16",
+    responsive: "w-12 h-12 xl:w-16 xl:h-16"
   };
-
+  
   const textSizeClass = {
-    small: "text-lg",
-    default: "text-2xl",
-    responsive: "text-xl xl:text-2xl"
+    small: "text-[8px]",
+    default: "text-[10px]",
+    responsive: "text-[8px] xl:text-[10px]"
   };
 
   const titleSizeClass = {
@@ -170,82 +169,55 @@ const ProjectProgressSummaryForList = memo(({ project, onSelect }) => {
 
   // Calculate progress based on available data for this project
   const sectionProgress = useMemo(() => {
-    const availableBoundaryTypes = new Set();
+    if (!project) return [];
     
-    // Get boundary types available in this project's data
-    if (project.data && Array.isArray(project.data)) {
-      project.data.forEach(boundary => {
-        if (boundary.layer_type) {
-          availableBoundaryTypes.add(boundary.layer_type);
+    const projectData = project.data || [];
+    const layerSectionCounts = {};
+    
+    // Count boundaries by layer section
+    Object.keys(LAYER_SECTIONS).forEach(sectionName => {
+      layerSectionCounts[sectionName] = 0;
+    });
+    
+    projectData.forEach(boundary => {
+      const layerType = boundary.layer_type;
+      
+      // Find which section this layer type belongs to
+      for (const [sectionName, sectionInfo] of Object.entries(LAYER_SECTIONS)) {
+        const layerIds = sectionInfo.layers.map(layer => layer.id);
+        const layerTypes = sectionInfo.layers.map(layer => layer.type);
+        
+        if (layerTypes.includes(layerType)) {
+          layerSectionCounts[sectionName]++;
+          break;
         }
-      });
-    }
-
-    return Object.entries(LAYER_SECTIONS).map(([sectionName, section]) => {
-      const totalLayers = section.layers.length;
-      
-      // For projects list, show progress based on available data
-      let availableLayers = 0;
-      
-      section.layers.forEach(layer => {
-        // Check if this layer type has data available
-        switch(layer.type) {
-          case 'Farm Portions':
-          case 'Erven':  
-          case 'Holdings':
-          case 'Public Places':
-            if (availableBoundaryTypes.has('Farm Portions') || 
-                availableBoundaryTypes.has('Erven') ||
-                availableBoundaryTypes.has('Holdings') ||
-                availableBoundaryTypes.has('Public Places')) {
-              availableLayers++;
-            }
-            break;
-          case 'Roads':
-            if (availableBoundaryTypes.has('Roads')) {
-              availableLayers++;
-            }
-            break;
-          case 'Contours':
-            if (availableBoundaryTypes.has('Contours')) {
-              availableLayers++;
-            }
-            break;
-          case 'Water Bodies':
-            if (availableBoundaryTypes.has('Water Bodies')) {
-              availableLayers++;
-            }
-            break;
-          case 'Environmental Constraints':
-            if (availableBoundaryTypes.has('Environmental Constraints')) {
-              availableLayers++;
-            }
-            break;
-          default:
-            // For other layer types, show as partially available
-            if (availableBoundaryTypes.size > 0) {
-              availableLayers += 0.3; // Partial credit
-            }
-        }
-      });
-      
-      const percentage = totalLayers > 0 ? Math.round((availableLayers / totalLayers) * 100) : 0;
+      }
+    });
+    
+    // Calculate progress for each section
+    return Object.entries(LAYER_SECTIONS).map(([sectionName, sectionInfo]) => {
+      const count = layerSectionCounts[sectionName];
+      const totalPossibleLayers = sectionInfo.layers.length;
+      const percentage = totalPossibleLayers > 0 ? Math.round((Math.min(count, totalPossibleLayers) / totalPossibleLayers) * 100) : 0;
       
       return {
         name: sectionName,
-        percentage: Math.min(percentage, 100), // Cap at 100%
-        availableLayers: Math.round(availableLayers),
-        totalLayers
+        count,
+        totalPossibleLayers,
+        percentage,
+        color: sectionInfo.color
       };
     });
   }, [project]);
 
-  const handleStepClick = (stepData) => {
-    console.log(`Project "${project.name}" - ${stepData.name}: ${stepData.percentage}% (${stepData.availableLayers}/${stepData.totalLayers} layers have data)`);
+  const handleProjectClick = () => {
+    if (onSelect) {
+      onSelect(project);
+    }
   };
 
-  const handleProjectClick = () => {
-    onSelect(project);
+  const handleStepClick = (step) => {
+    console.log(`Clicked on step: ${step.name}`);
   };
 
   if (!project) return null;
@@ -259,118 +231,144 @@ const ProjectProgressSummaryForList = memo(({ project, onSelect }) => {
         projectName={project.name}
       />
       <div 
-      className="bg-white rounded-xl shadow-lg p-6 mb-6 cursor-pointer hover:shadow-xl transition-all transform hover:scale-[1.01] border border-gray-100"
-      onClick={handleProjectClick}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          handleProjectClick();
-        }
-      }}
-      aria-label={`Open project ${project.name}`}
-    >
-      {/* Desktop Layout */}
-      <div className="hidden lg:flex items-center gap-6">
-        {/* Project Info */}
-        <div className="min-w-[220px] flex-shrink-0">
-          <div className="text-xl font-bold text-slate-800">
-            {project.name}
+        className="bg-white rounded-xl shadow-lg p-6 mb-6 cursor-pointer hover:shadow-xl transition-all transform hover:scale-[1.01] border border-gray-100"
+        onClick={handleProjectClick}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleProjectClick();
+          }
+        }}
+        aria-label={`Open project ${project.name}`}
+      >
+        {/* Desktop Layout */}
+        <div className="hidden lg:flex items-center gap-6">
+          {/* Project Info */}
+          <div className="min-w-[220px] flex-shrink-0">
+            <div className="text-xl font-bold text-slate-800">
+              {project.name}
+            </div>
+            <div className="text-xs text-gray-500 mt-1">
+              Created: {new Date(project.created).toLocaleDateString()}
+            </div>
           </div>
-          <div className="text-sm text-slate-600 mt-1">
-            Layer Progress Summary
-          </div>
-          <div className="text-xs text-slate-500 mt-1">
-            {project.data ? project.data.length : 0} boundaries available
-          </div>
-          <div className="text-xs text-gray-500 mt-2">
-            📍 {project.coordinates.latitude.toFixed(4)}, {project.coordinates.longitude.toFixed(4)}
-          </div>
-          <div className="text-xs text-gray-500 mt-1">
-            Created: {new Date(project.created).toLocaleDateString()}
-          </div>
-        </div>
 
-        {/* Steps Progress - Responsive sizing */}
-        <div className="flex-1 flex items-center justify-between gap-2 xl:gap-4 min-w-0">
-          {sectionProgress.map((step, index) => (
-            <ProgressCircle
-              key={step.name}
-              percentage={step.percentage}
-              title={step.name}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleStepClick(step);
-              }}
-              size="responsive"
-            />
-          ))}
-        </div>
+          {/* Steps Progress - Responsive sizing */}
+          <div className="flex-1 flex items-center justify-between gap-2 xl:gap-4 min-w-0">
+            {sectionProgress.map((step, index) => (
+              <ProgressCircle
+                key={step.name}
+                percentage={step.percentage}
+                title={step.name}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleStepClick(step);
+                }}
+                size="responsive"
+              />
+            ))}
+          </div>
 
-        {/* Click Arrow */}
-        <div className="flex-shrink-0 ml-4">
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={handleDelete}
-              className="text-red-600 hover:text-red-800 focus:outline-none"
-              disabled={isDeleting}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            </button>
-            <div className="text-center">
-              <div className="text-sm font-medium text-gray-900">
-                {project.data ? project.data.length : 0}
+          {/* Actions and Info */}
+          <div className="flex-shrink-0 ml-4">
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={handleDelete}
+                className="text-red-600 hover:text-red-800 focus:outline-none p-1 rounded hover:bg-red-50"
+                disabled={isDeleting}
+                title="Delete Project"
+              >
+                {isDeleting ? (
+                  <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                )}
+              </button>
+              <div className="text-center">
+                <div className="text-sm font-medium text-gray-900">
+                  {project.data ? project.data.length : 0}
+                </div>
+                <div className="text-xs text-gray-500">Boundaries</div>
               </div>
-              <div className="text-xs text-gray-500">Boundaries</div>
+              
+              <div className="w-6 h-6 text-gray-400">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Layout */}
+        <div className="lg:hidden">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex-1">
+              <div className="text-lg font-bold text-slate-800">
+                {project.name}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">
+                Created: {new Date(project.created).toLocaleDateString()}
+              </div>
             </div>
             
-            <div className="w-6 h-6 text-gray-400">
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={handleDelete}
+                className="text-red-600 hover:text-red-800 focus:outline-none p-1 rounded hover:bg-red-50"
+                disabled={isDeleting}
+                title="Delete Project"
+              >
+                {isDeleting ? (
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                )}
+              </button>
+              <div className="text-center">
+                <div className="text-sm font-medium text-gray-900">
+                  {project.data ? project.data.length : 0}
+                </div>
+                <div className="text-xs text-gray-500">Data</div>
+              </div>
+              <div className="text-xs text-gray-500">
+                📍 {project.coordinates.latitude.toFixed(4)}, {project.coordinates.longitude.toFixed(4)}
+              </div>
+            </div>
+            
+            <div className="w-6 h-6 text-gray-400 ml-4">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Mobile/Tablet Layout */}
-      <div className="block lg:hidden">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex-1">
-            <div className="text-lg font-bold text-slate-800">
-              {project.name}
-            </div>
-            <div className="text-sm text-slate-600 mt-1">
-              {project.data ? project.data.length : 0} boundaries • Layer Progress Summary
-            </div>
-            <div className="text-xs text-gray-500 mt-1">
-              📍 {project.coordinates.latitude.toFixed(4)}, {project.coordinates.longitude.toFixed(4)}
-            </div>
-          </div>
           
-          <div className="w-6 h-6 text-gray-400 ml-4">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+            {sectionProgress.map((step, index) => (
+              <ProgressCircle
+                key={step.name}
+                percentage={step.percentage}
+                title={step.name}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleStepClick(step);
+                }}
+                size="small"
+              />
+            ))}
           </div>
-        </div>
-        
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-          {sectionProgress.map((step, index) => (
-            <ProgressCircle
-              key={step.name}
-              percentage={step.percentage}
-              title={step.name}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleStepClick(step);
-              }}
-              size="small"
-            />
-          ))}
         </div>
       </div>
     </>
