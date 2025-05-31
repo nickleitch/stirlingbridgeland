@@ -4,13 +4,14 @@ import { useProject } from '../../contexts/ProjectContext';
 
 const ContourGenerationControls = memo(({ layerId, layerName, onContourGenerated }) => {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [settings, setSettings] = useState({
-    contour_interval: 2.0,
-    grid_size_km: 3.0,
-    grid_points: 10, // Reduced from 15 to stay within API limits (10x10 = 100 points)
-    dataset: 'srtm30m'
-  });
+  
+  // Fixed settings for reliability (no user configuration)
+  const fixedSettings = {
+    contour_interval: 10.0,  // 10m intervals (safer default)
+    grid_size_km: 2.0,       // 2km grid (focused coverage)
+    grid_points: 12,         // 12x12 grid (reliable)
+    dataset: 'srtm30m'       // Recommended dataset
+  };
 
   const { currentProject, updateProject } = useProject();
 
