@@ -348,6 +348,18 @@ Stirling Bridge LandDev App - Complete Development Summary: Professional-grade l
           agent: "testing"
           comment: "Error handling for invalid datasets works correctly. Server returns appropriate error message listing available datasets."
 
+  - task: "Project Deletion Functionality"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "Project deletion functionality is working correctly. The DELETE /api/projects/{project_id} endpoint successfully removes projects from the MongoDB database. Testing verified that projects are completely removed (404 Not Found when trying to retrieve a deleted project), error handling works correctly for non-existent projects (returns 404 Not Found), attempting to delete the same project twice correctly returns a 404 error, and multiple projects can be deleted in sequence without issues. The implementation in server.py and database_service.py is robust and handles all test cases properly."
+
   - task: "Enhanced Project Creation with Elevation Data"
     implemented: true
     working: true
