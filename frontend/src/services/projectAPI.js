@@ -23,21 +23,12 @@ class ProjectAPIService {
       
       console.log('Making API request to:', url);
       
-      // Add credentials to ensure cookies are sent
-      const fetchOptions = {
-        ...options,
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          ...options.headers
-        }
-      };
-      
-      const response = await fetch(url, fetchOptions);
+      const response = await fetch(url, {
         headers: {
           'Content-Type': 'application/json',
           ...options.headers
         },
+        credentials: 'include',
         ...options
       });
 
