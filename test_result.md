@@ -672,7 +672,8 @@ Stirling Bridge LandDev App - Complete Development Summary: Professional-grade l
 
 ## test_plan:
   current_focus: 
-    - "Project Deletion UI"
+    - "Property Boundaries Styling Fix"
+    - "Contour Generation Display"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
