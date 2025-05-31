@@ -26,14 +26,14 @@ TEST_PROJECT_NAME = "Johannesburg Test Project"
 
 # Colors for terminal output
 class Colors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
+    HEADER = '33[95m'
+    OKBLUE = '33[94m'
+    OKGREEN = '33[92m'
+    WARNING = '33[93m'
+    FAIL = '33[91m'
+    ENDC = '33[0m'
+    BOLD = '33[1m'
+    UNDERLINE = '33[4m'
 
 class BackendTester:
     """Test suite for Stirling Bridge LandDev Backend"""
@@ -910,6 +910,122 @@ class BackendTester:
             self.log_test("CAD Download with Contours", False, f"Error: {str(e)}")
             return False
             
+    async def test_post_cad_download(self, project_id: str):
+        """Test the POST download-files endpoint for CAD generation with contours"""
+        start_time = time.time()
+        try:
+            print(f"Testing POST CAD download with contours for project: {project_id}")
+            
+            # First, get the project data to check if it has contours
+            project_response = await self.client.get(f"{self.base_url}/project/{project_id}")
+            if project_response.status_code != 200:
+                self.log_test("POST CAD Download with Contours", False, 
+                             f"Failed to get project data: {project_response.status_code}", start_time - time.time())
+                return False
+                
+            project_data = project_response.json()
+            boundaries = project_data.get("data", [])
+            
+            # Check if project has contour boundaries
+            contour_boundaries = [b for b in boundaries if b.get("layer_type") == "Generated Contours"]
+            print(f"Project has {len(contour_boundaries)} contour boundaries")
+            
+            # Now use POST to download the CAD files
+            payload = {
+                "include_layers": ["all"],  # Request all layers including contours
+                "cad_format": "dxf",
+                "units": "meters"
+            }
+            
+            response = await self.client.post(f"{self.base_url}/download-files/{project_id}", json=payload)
+            response_time = time.time() - start_time
+            
+            if response.status_code == 200:
+                # Check if we got a ZIP file
+                if response.headers.get('content-type') != 'application/zip':
+                    self.log_test("POST CAD Download with Contours", False, 
+                                 f"Expected ZIP file, got {response.headers.get('content-type')}", response_time)
+                    return False
+                
+                # Save the ZIP file for inspection
+                zip_path = f"project_{project_id}_post_cad_package.zip"
+                with open(zip_path, "wb") as f:
+                    f.write(response.content)
+                
+                print(f"Saved CAD package to {zip_path}")
+                
+                # Analyze the ZIP file contents
+                zip_file = zipfile.ZipFile(io.BytesIO(response.content))
+                file_list = zip_file.namelist()
+                
+                print(f"ZIP file contains {len(file_list)} files:")
+                for filename in file_list:
+                    print(f"  - {filename}")
+                
+                # Check if we have a contour layer file (specifically looking for generated contours)
+                contour_files = [f for f in file_list if "CONT_GEN" in f]
+                if not contour_files:
+                    # Try a more general search if specific naming not found
+                    contour_files = [f for f in file_list if "CONT" in f]
+                
+                if contour_files:
+                    print(f"Found contour files: {contour_files}")
+                    
+                    # Extract and analyze the first contour file
+                    contour_file = contour_files[0]
+                    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                        zip_ref.extract(contour_file)
+                    
+                    # Check file size
+                    file_size = os.path.getsize(contour_file)
+                    
+                    # Detailed file content check
+                    with open(contour_file, 'r') as f:
+                        content = f.read()
+                        
+                        # Check for key DXF sections
+                        has_sections = "SECTION" in content and "ENTITIES" in content
+                        # Check for polylines (contour lines)
+                        has_polylines = "LWPOLYLINE" in content
+                        # Check for metadata
+                        has_metadata = "STIRLING_BRIDGE_METADATA" in content
+                        # Check for generated contours layer name
+                        has_contour_layer = "SDP_GEO_CONT_GEN_001" in content
+                        # Count polylines (rough estimate)
+                        polyline_count = content.count("LWPOLYLINE")
+                        
+                        # Check for contour-specific metadata
+                        has_contour_metadata = "LAYER_TYPE:Generated Contours" in content
+                        
+                        details = f"Found {len(contour_files)} contour files, Size: {file_size} bytes"
+                        details += f", Has sections: {has_sections}, Has polylines: {has_polylines} (count: {polyline_count})"
+                        details += f", Has metadata: {has_metadata}, Has contour layer: {has_contour_layer}"
+                        details += f", Has contour metadata: {has_contour_metadata}"
+                        
+                        # Compare polyline count with expected contour boundaries
+                        if len(contour_boundaries) > 0:
+                            details += f", Expected contours: {len(contour_boundaries)}"
+                            
+                        # Check if the file has the expected contour data
+                        if has_sections and has_polylines and has_contour_layer and polyline_count > 0:
+                            self.log_test("POST CAD Download with Contours", True, details, response_time)
+                            return True
+                        else:
+                            self.log_test("POST CAD Download with Contours", False, 
+                                         f"DXF file structure issues: {details}", response_time)
+                            return False
+                else:
+                    self.log_test("POST CAD Download with Contours", False, 
+                                 "No contour files found in the CAD package", response_time)
+                    return False
+            else:
+                self.log_test("POST CAD Download with Contours", False, 
+                             f"Unexpected status code: {response.status_code}, Response: {response.text}", response_time)
+                return False
+        except Exception as e:
+            self.log_test("POST CAD Download with Contours", False, f"Error: {str(e)}")
+            return False
+            
     def print_summary(self):
         """Print a summary of all test results"""
         print("\n" + "="*80)
@@ -967,8 +1083,11 @@ async def main():
         )
         
         if project_id:
-            # Test CAD download with contours
+            # Test GET CAD download with contours
             await tester.test_cad_download_with_contours(project_id)
+            
+            # Test POST CAD download with contours
+            await tester.test_post_cad_download(project_id)
             
             # Test project retrieval to verify contours are stored
             await tester.test_project_retrieval(project_id)
