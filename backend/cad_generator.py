@@ -187,8 +187,35 @@ class SDPLayerGenerator:
         geometry = boundary.get('geometry', {})
         properties = boundary.get('properties', {})
         
-        # Extract coordinates based on geometry type
-        if geometry.get('rings'):  # Polygon geometry
+        # Handle GeoJSON LineString features (for generated contours)
+        if geometry.get('type') == 'LineString' and geometry.get('coordinates'):
+            coords = [(float(coord[0]), float(coord[1])) for coord in geometry['coordinates']]
+            if len(coords) > 1:  # Valid linestring
+                polyline = msp.add_lwpolyline(coords)
+                polyline.layer = layer_name
+                
+                # Add metadata as extended data
+                self._add_metadata_to_entity(polyline, boundary, spec['metadata_fields'])
+                entities.append(polyline)
+        
+        # Handle GeoJSON Polygon features
+        elif geometry.get('type') == 'Polygon' and geometry.get('coordinates'):
+            for ring in geometry['coordinates']:
+                coords = [(float(coord[0]), float(coord[1])) for coord in ring]
+                if len(coords) > 2:  # Valid polygon
+                    # Close the polygon if not already closed
+                    if coords[0] != coords[-1]:
+                        coords.append(coords[0])
+                    
+                    polyline = msp.add_lwpolyline(coords)
+                    polyline.layer = layer_name
+                    
+                    # Add metadata as extended data
+                    self._add_metadata_to_entity(polyline, boundary, spec['metadata_fields'])
+                    entities.append(polyline)
+        
+        # Handle legacy ESRI geometry format (rings and paths)
+        elif geometry.get('rings'):  # Polygon geometry
             for ring in geometry['rings']:
                 coords = [(float(coord[0]), float(coord[1])) for coord in ring]
                 if len(coords) > 2:  # Valid polygon
@@ -213,6 +240,9 @@ class SDPLayerGenerator:
                     # Add metadata as extended data
                     self._add_metadata_to_entity(polyline, boundary, spec['metadata_fields'])
                     entities.append(polyline)
+        
+        else:
+            print(f"Warning: Unsupported geometry type for boundary: {geometry.get('type', 'unknown')}")
         
         return entities
     
