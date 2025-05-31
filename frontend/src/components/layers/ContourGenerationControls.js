@@ -14,7 +14,7 @@ const ContourGenerationControls = memo(({ layerId, layerName, onContourGenerated
 
   const { currentProject, updateProject } = useProject();
 
-  const addBoundariesToProject = (projectId, newBoundaries) => {
+  const addBoundariesToProject = async (projectId, newBoundaries) => {
     if (!currentProject || currentProject.id !== projectId) {
       console.error('Cannot add boundaries: project not found or not current');
       return;
@@ -24,7 +24,7 @@ const ContourGenerationControls = memo(({ layerId, layerName, onContourGenerated
     const existingBoundaries = currentProject.data || [];
     const updatedBoundaries = [...existingBoundaries, ...newBoundaries];
     
-    // Update the project with new boundaries
+    // Update the project locally first
     const updatedProject = {
       ...currentProject,
       data: updatedBoundaries,
@@ -32,7 +32,33 @@ const ContourGenerationControls = memo(({ layerId, layerName, onContourGenerated
     };
 
     updateProject(updatedProject);
-    console.log(`Added ${newBoundaries.length} contour boundaries to project ${projectId}`);
+    
+    // Save to backend using the new PUT endpoint
+    try {
+      const backendUrl = import.meta.env.REACT_APP_BACKEND_URL || process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+      const response = await fetch(`${backendUrl}/api/projects/${projectId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        mode: 'cors',
+        body: JSON.stringify({
+          data: updatedBoundaries
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to save project: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log(`Successfully saved ${newBoundaries.length} contour boundaries to project ${projectId}`);
+      
+    } catch (error) {
+      console.error('Failed to save contours to backend:', error);
+      // Still show success message since contours are displayed locally
+      console.warn('Contours are visible locally but may not persist after page reload');
+    }
   };
 
   const handleGenerateContours = async () => {
