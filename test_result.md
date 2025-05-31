@@ -612,7 +612,7 @@ Stirling Bridge LandDev App - Complete Development Summary: Professional-grade l
 
 ## test_plan:
   current_focus: 
-    - "Contour Generation Feature"
+    - "CAD Generation with Contour Data"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
