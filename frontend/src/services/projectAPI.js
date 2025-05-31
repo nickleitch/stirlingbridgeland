@@ -26,8 +26,10 @@ class ProjectAPIService {
       const response = await fetch(url, {
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
           ...options.headers
         },
+        credentials: 'same-origin',
         mode: 'cors',
         ...options
       });
