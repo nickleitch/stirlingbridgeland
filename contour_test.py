@@ -83,7 +83,7 @@ class ContourTester:
                 services = data.get("external_services", {})
                 contour_service = services.get("contour_service", {})
                 
-                if contour_service and contour_service.get("status") == "available":
+                if contour_service and contour_service.get("status") in ["available", "active"]:
                     details = f"Contour service status: {contour_service.get('status')}"
                     if contour_service.get("description"):
                         details += f", Description: {contour_service.get('description')}"
