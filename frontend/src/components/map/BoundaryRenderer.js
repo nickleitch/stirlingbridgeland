@@ -70,6 +70,7 @@ const BoundaryRenderer = memo(() => {
     // Determine if this is a polygon or polyline based on geometry and layer type
     const isPolyline = boundary.geometry?.paths || 
                      boundary.layer_type === 'Contours' || 
+                     boundary.layer_type === 'Generated Contours' ||
                      boundary.layer_type === 'Roads';
 
     const PopupContent = (
