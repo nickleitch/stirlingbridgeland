@@ -136,6 +136,10 @@ export const useBoundaryData = () => {
       case 'topography_basic':
       case 'contours_major':
         return boundariesToFilter.filter(boundary => boundary.layer_type === 'Contours');
+      case 'generated_contours':
+        return boundariesToFilter.filter(boundary => boundary.layer_type === 'Generated Contours');
+      case 'elevation_data':
+        return boundariesToFilter.filter(boundary => boundary.layer_type === 'Elevation Data');
       case 'water_bodies':
         return boundariesToFilter.filter(boundary => boundary.layer_type === 'Water Bodies');
       case 'environmental_constraints':
