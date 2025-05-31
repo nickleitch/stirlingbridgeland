@@ -21,10 +21,10 @@ class ContourGenerationService:
     def __init__(self, open_topo_service: OpenTopoDataService):
         self.open_topo_service = open_topo_service
         
-        # Default contour generation parameters
-        self.default_contour_interval = 2.0  # 2 meter intervals
-        self.default_grid_size_km = 3.0      # 3km grid for better coverage
-        self.default_grid_points = 15        # 15x15 grid (225 points)
+        # Default contour generation parameters (simplified for reliability)
+        self.default_contour_interval = 10.0  # 10 meter intervals (safer default)
+        self.default_grid_size_km = 2.0       # 2km grid for focused coverage  
+        self.default_grid_points = 12         # 12x12 grid (144 points, within limits)
         
         # Contour line styling options
         self.contour_styles = {
