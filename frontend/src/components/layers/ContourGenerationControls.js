@@ -86,7 +86,7 @@ const ContourGenerationControls = memo(({ layerId, layerName, onContourGenerated
         
         if (contourBoundaries.length > 0) {
           // Add contour boundaries to the project
-          addBoundariesToProject(currentProject.id, contourBoundaries);
+          await addBoundariesToProject(currentProject.id, contourBoundaries);
           
           // Notify parent component
           if (onContourGenerated) {
