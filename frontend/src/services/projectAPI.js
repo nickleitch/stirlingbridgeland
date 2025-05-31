@@ -8,11 +8,17 @@ const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001
 class ProjectAPIService {
   constructor() {
     this.baseURL = API_BASE_URL;
+    console.log('ProjectAPIService initialized with baseURL:', this.baseURL);
   }
 
   async makeRequest(endpoint, options = {}) {
     try {
-      const url = `${this.baseURL}/api${endpoint}`;
+      // Don't add /api prefix if the baseURL already includes it
+      const url = this.baseURL.endsWith('/api') 
+        ? `${this.baseURL}${endpoint}`
+        : `${this.baseURL}/api${endpoint}`;
+      
+      console.log('Making API request to:', url);
       const response = await fetch(url, {
         headers: {
           'Content-Type': 'application/json',
