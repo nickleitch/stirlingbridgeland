@@ -545,6 +545,10 @@ class ExternalAPIManager:
             "open_topo_service": {
                 "status": "available" if self.open_topo_service else "not_available",
                 "description": "Open Topo Data elevation service"
+            },
+            "contour_service": {
+                "status": "available" if self.contour_service else "not_available",
+                "description": "Professional contour generation service"
             }
         }
         
@@ -555,5 +559,13 @@ class ExternalAPIManager:
                 status["open_topo_service"].update(open_topo_status)
             except Exception as e:
                 status["open_topo_service"]["error"] = str(e)
+        
+        # Add Contour Generation specific status if available
+        if self.contour_service:
+            try:
+                contour_status = self.contour_service.get_service_status()
+                status["contour_service"].update(contour_status)
+            except Exception as e:
+                status["contour_service"]["error"] = str(e)
         
         return status
