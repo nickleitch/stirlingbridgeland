@@ -13,15 +13,18 @@ frontend:
   
   - task: "Contour Generation and Display"
     implemented: true
-    working: false
+    working: true
     file: "/app/frontend/src/hooks/useBoundaryData.js"
-    stuck_count: 1
+    stuck_count: 0
     priority: "high"
     needs_retesting: false
     status_history:
         - working: false
           agent: "testing"
           comment: "Contour generation API works correctly and successfully adds contour boundaries to the project data (800 contour boundaries were added during testing). However, the contours are not being displayed on the map. The issue appears to be in the filtering logic in useBoundaryData.js. The getBoundariesForLayer function is only returning boundaries that contain the search point, but contours typically don't contain the search point. The 'isBaseDataLayer' check should be working for 'generated_contours' but the contours are still being filtered out. The console logs show that the layer is correctly configured and the toggle is enabled, but no contours appear on the map."
+        - working: true
+          agent: "testing"
+          comment: "The debugging logs have been added and the issue has been resolved. Testing shows that contour generation is working correctly and the boundaries are being properly filtered. The console logs show 'Filtering for generated_contours layer' followed by 'Total boundaries to filter: 807' and then multiple 'Boundary layer_type: Generated Contours Matches Generated Contours: true' messages. The final log shows 'Generated contours found: 800', confirming that the filtering is now working correctly. The layer_type value is correctly set to 'Generated Contours' and the boundaries are being properly matched in the filtering function."
 
 metadata:
   created_by: "main_agent"
