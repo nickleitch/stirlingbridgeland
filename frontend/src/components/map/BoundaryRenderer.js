@@ -32,6 +32,9 @@ const BoundaryRenderer = memo(() => {
         layerId = layerStates['topography_basic'] ? 'topography_basic' : 
                  layerStates['contours_major'] ? 'contours_major' : null;
         break;
+      case 'Generated Contours':
+        layerId = 'generated_contours';
+        break;
       case 'Water Bodies':
         layerId = 'water_bodies';
         break;
