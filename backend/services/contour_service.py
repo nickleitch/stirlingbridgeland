@@ -443,7 +443,7 @@ class ContourGenerationService:
                     "type": "Feature",
                     "geometry": {
                         "type": "LineString",
-                        "coordinates": [[coord[1], coord[0]] for coord in contour["coordinates"]]  # [lng, lat]
+                        "coordinates": [[coord[1], coord[0]] for coord in contour["coordinates"]]  # [lng, lat] for GeoJSON
                     },
                     "properties": {
                         "elevation": contour["elevation"],
@@ -524,10 +524,9 @@ class ContourGenerationService:
             contour_intersects = False
             
             try:
-                # Get contour geometry coordinates
-                if contour.get('geometry', {}).get('type') == 'LineString':
-                    contour_coords = contour['geometry']['coordinates']
-                    
+                # Get contour coordinates directly (before GeoJSON conversion)
+                contour_coords = contour.get('coordinates')
+                if contour_coords:
                     # Check intersection with each relevant boundary
                     for boundary in relevant_boundaries:
                         if self._contour_intersects_boundary(contour_coords, boundary):
@@ -582,9 +581,10 @@ class ContourGenerationService:
                 return False
             
             # Check if any contour point is inside the boundary polygon
+            # contour_coords is in format [[lat, lng], [lat, lng], ...] from internal contour format
             for coord in contour_coords:
                 if len(coord) >= 2:
-                    lng, lat = coord[0], coord[1]
+                    lat, lng = coord[0], coord[1]
                     if self._point_in_polygon(lat, lng, boundary_coords):
                         return True
             
