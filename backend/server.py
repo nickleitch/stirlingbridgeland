@@ -835,6 +835,56 @@ async def get_user_profile(user_id: Optional[str] = None):
             detail="Failed to retrieve user profile"
         )
 
+@app.put("/api/projects/{project_id}")
+async def update_project(project_id: str, update_data: dict):
+    """Update an existing project with new data"""
+    try:
+        project_collection = db_service.db["projects"]
+        
+        # Validate that the project exists
+        existing_project = await project_collection.find_one({"id": project_id})
+        if not existing_project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project with ID {project_id} not found"
+            )
+        
+        # Prepare update data
+        allowed_fields = ["name", "description", "data", "coordinates", "project_type"]
+        update_fields = {k: v for k, v in update_data.items() if k in allowed_fields}
+        update_fields["last_updated"] = datetime.now().isoformat()
+        
+        # Update the project
+        result = await project_collection.update_one(
+            {"id": project_id},
+            {"$set": update_fields}
+        )
+        
+        if result.modified_count == 0:
+            logger.warning(f"No changes made to project {project_id}")
+        
+        # Get the updated project
+        updated_project = await project_collection.find_one({"id": project_id})
+        if updated_project:
+            updated_project["_id"] = str(updated_project["_id"])
+        
+        logger.info(f"Updated project {project_id}")
+        
+        return {
+            "success": True,
+            "project": updated_project,
+            "message": f"Project {project_id} updated successfully"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to update project {project_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update project"
+        )
+
 @app.put("/api/menu/user-profile", response_model=UserProfile)
 async def update_user_profile(update_data: UserProfileUpdate, user_id: Optional[str] = None):
     """Update user profile"""
