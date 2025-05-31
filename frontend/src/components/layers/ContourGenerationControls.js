@@ -123,8 +123,8 @@ const ContourGenerationControls = memo(({ layerId, layerName, onContourGenerated
           onClick={handleGenerateContours}
           disabled={isGenerating || !currentProject}
           className="p-1 rounded hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          title="Generate 10m Contours (within property boundaries)"
-          aria-label="Generate elevation contours filtered to property boundaries"
+          title="Generate 10m elevation contours"
+          aria-label="Generate elevation contours"
         >
           {isGenerating ? (
             <svg className="w-4 h-4 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">

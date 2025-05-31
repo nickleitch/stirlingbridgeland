@@ -38,7 +38,7 @@ const LayerItem = memo(({ layer }) => {
             <div className="text-xs text-gray-500 mt-1">{layer.stage}</div>
           )}
           {isGeneratable && (
-            <div className="text-xs text-blue-600 mt-1">Click + to generate</div>
+            <div className="text-xs text-blue-600 mt-1">Generate contours</div>
           )}
         </div>
         

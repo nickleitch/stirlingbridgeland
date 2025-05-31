@@ -28,10 +28,7 @@ const BoundaryRenderer = memo(() => {
       case 'Roads':
         layerId = 'roads_existing';
         break;
-      case 'Contours':
-        layerId = layerStates['topography_basic'] ? 'topography_basic' : 
-                 layerStates['contours_major'] ? 'contours_major' : null;
-        break;
+
       case 'Generated Contours':
         layerId = 'generated_contours';
         break;
