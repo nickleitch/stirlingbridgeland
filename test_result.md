@@ -640,6 +640,30 @@ Stirling Bridge LandDev App - Complete Development Summary: Professional-grade l
           agent: "testing"
           comment: "Accessibility improvements are in place. Form inputs have proper labels, buttons have descriptive text, and the application structure follows semantic HTML practices."
 
+  - task: "Property Boundaries Styling Fix"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/components/map/BoundaryRenderer.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "Property boundaries are now correctly displayed as outlines only with no fill (fillOpacity: 0). This makes the boundaries much clearer and more professional looking. The orange boundary lines are clearly visible against the satellite imagery background."
+
+  - task: "Contour Generation Display"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/config/layerConfig.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "The 'Generated Contours' layer is now properly included in the layer mapping and appears in the Base Data section of the layer sidebar. The layer has a toggle switch and is properly integrated with the rest of the layer system. Console logs confirm that contour generation is working correctly, with logs showing 'Added 800 contour boundaries to project' and 'Generated 800 contour boundaries'."
+
 ## metadata:
   created_by: "main_agent"
   version: "1.0"
