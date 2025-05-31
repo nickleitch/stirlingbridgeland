@@ -40,7 +40,7 @@ class BackendTester:
     
     def __init__(self, base_url: str = None):
         """Initialize the tester with the backend URL"""
-        self.base_url = base_url or BACKEND_URL
+        self.base_url = base_url or API_BASE_URL
         self.client = httpx.AsyncClient(timeout=30.0)
         self.test_results = []
         self.created_project_id = None
