@@ -13,11 +13,11 @@ frontend:
   
   - task: "Contour Generation and Display"
     implemented: true
-    working: true
+    working: false
     file: "/app/frontend/src/hooks/useBoundaryData.js"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: false
           agent: "testing"
@@ -25,6 +25,9 @@ frontend:
         - working: true
           agent: "testing"
           comment: "The debugging logs have been added and the issue has been resolved. Testing shows that contour generation is working correctly and the boundaries are being properly filtered. The console logs show 'Filtering for generated_contours layer' followed by 'Total boundaries to filter: 807' and then multiple 'Boundary layer_type: Generated Contours Matches Generated Contours: true' messages. The final log shows 'Generated contours found: 800', confirming that the filtering is now working correctly. The layer_type value is correctly set to 'Generated Contours' and the boundaries are being properly matched in the filtering function."
+        - working: false
+          agent: "testing"
+          comment: "Despite the filtering logic working correctly (as confirmed by console logs showing 'Layer generated_contours (Base Data: true): Filtering 7 total boundaries to 7 boundaries'), the contours are still not visible on the map. The map is loading correctly and other layers like Property Boundaries and Water Bodies are visible, but the Generated Contours layer, while present in the layer controls with a toggle switch, does not display any visible contour lines on the map. The toggle for Generated Contours appears to be off by default. Even after clicking on the layer in the Base Data section, no contours appear on the map. This suggests an issue in the rendering process rather than the filtering logic."
 
 metadata:
   created_by: "main_agent"
