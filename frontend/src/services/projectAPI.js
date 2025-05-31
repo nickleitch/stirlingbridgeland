@@ -13,13 +13,27 @@ class ProjectAPIService {
 
   async makeRequest(endpoint, options = {}) {
     try {
+      // Ensure endpoint starts with a slash
+      const formattedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+      
       // Don't add /api prefix if the baseURL already includes it
       const url = this.baseURL.endsWith('/api') 
-        ? `${this.baseURL}${endpoint}`
-        : `${this.baseURL}/api${endpoint}`;
+        ? `${this.baseURL}${formattedEndpoint}`
+        : `${this.baseURL}/api${formattedEndpoint}`;
       
       console.log('Making API request to:', url);
-      const response = await fetch(url, {
+      
+      // Add credentials to ensure cookies are sent
+      const fetchOptions = {
+        ...options,
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers
+        }
+      };
+      
+      const response = await fetch(url, fetchOptions);
         headers: {
           'Content-Type': 'application/json',
           ...options.headers
