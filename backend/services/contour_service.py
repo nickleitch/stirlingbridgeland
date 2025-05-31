@@ -57,7 +57,7 @@ class ContourGenerationService:
                               dataset: str = "srtm30m",
                               property_boundaries: Optional[List[Dict]] = None) -> APIResponse:
         """
-        Generate contour lines for a given area
+        Generate contour lines for a given area, filtered to property boundaries
         
         Args:
             center_lat: Center latitude
@@ -66,6 +66,7 @@ class ContourGenerationService:
             grid_size_km: Size of area to analyze (kilometers)
             grid_points: Number of elevation points per side
             dataset: Elevation dataset to use
+            property_boundaries: List of property boundaries (Farm Portions/Erven) to filter contours
         """
         try:
             # Use defaults if not provided
