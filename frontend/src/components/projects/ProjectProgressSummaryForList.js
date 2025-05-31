@@ -139,6 +139,33 @@ const ProgressCircle = memo(({ percentage, title, onClick, size = 'default' }) =
 ProgressCircle.displayName = 'ProgressCircle';
 
 const ProjectProgressSummaryForList = memo(({ project, onSelect }) => {
+  const { deleteProject, loading } = useProject();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = async (e) => {
+    e.stopPropagation(); // Prevent project selection
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    setIsDeleting(true);
+    try {
+      const result = await deleteProject(project.id);
+      if (result.success) {
+        console.log(`Project "${project.name}" deleted successfully`);
+      } else {
+        alert(`Failed to delete project: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      alert(`Error deleting project: ${error.message}`);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteModal(false);
+    }
+  };
+
   // Calculate progress based on available data for this project
   const sectionProgress = useMemo(() => {
     const availableBoundaryTypes = new Set();
