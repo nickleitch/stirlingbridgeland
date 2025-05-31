@@ -179,9 +179,9 @@ const ContourGenerationControls = memo(({ layerId, layerName, onContourGenerated
                 onChange={(e) => setSettings(prev => ({ ...prev, grid_points: parseInt(e.target.value) }))}
                 className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value={10}>10x10 (Fast)</option>
-                <option value={15}>15x15 (Standard)</option>
-                <option value={20}>20x20 (High Quality)</option>
+                <option value={10}>10x10 (Standard)</option>
+                <option value={15}>15x15 (High Quality - May Exceed API Limits)</option>
+                <option value={20}>20x20 (Very High Quality - May Exceed API Limits)</option>
               </select>
             </div>
 
