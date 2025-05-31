@@ -11,12 +11,15 @@ import asyncio
 import json
 import time
 import os
+import zipfile
+import io
 from typing import Dict, Any, List
 import uuid
 import sys
 
 # Test configuration
-BACKEND_URL = "http://localhost:8001/api"  # Default local URL
+BACKEND_URL = os.environ.get('REACT_APP_BACKEND_URL', 'http://localhost:8001')
+API_BASE_URL = f"{BACKEND_URL}/api"
 JOHANNESBURG_COORDS = {"latitude": -26.2041, "longitude": 28.0473}
 SOUTH_AFRICA_COORDS = {"latitude": -29.4828, "longitude": 31.205}  # South African coordinates for Open Topo Data testing
 TEST_PROJECT_NAME = "Johannesburg Test Project"
