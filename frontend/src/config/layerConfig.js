@@ -12,6 +12,7 @@ export const LAYER_SECTIONS = {
       { id: "roads_existing", name: "Roads Existing", type: "Roads", color: "#FF6347" },
       { id: "topography_basic", name: "Topography Basic", type: "Contours", color: "#8B4513" },
       { id: "elevation_data", name: "Elevation Data", type: "Elevation Data", color: "#CD853F" },
+      { id: "generated_contours", name: "Generated Contours", type: "Generated Contours", color: "#A0522D", generateable: true },
       { id: "water_bodies", name: "Water Bodies", type: "Water Bodies", color: "#00BFFF" },
       { id: "labels_primary", name: "Labels Primary", type: "Labels", color: "#2F4F4F" },
       { id: "survey_control", name: "Survey Control", type: "Survey", color: "#DC143C" },
