@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     
     # Database Configuration
     mongo_url: str = Field(default="mongodb://localhost:27017", env="MONGO_URL")
-    database_name: str = Field(default="stirling_landdev", env="DB_NAME")
+    database_name: str = Field(default="stirling_landdev", env="DATABASE_NAME")
     
     # API Timeouts and Limits
     api_timeout: float = Field(default=30.0, env="API_TIMEOUT")

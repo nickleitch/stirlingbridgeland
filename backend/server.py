@@ -647,7 +647,7 @@ async def generate_contours(request: dict):
         center_lng = request.get("longitude")
         contour_interval = request.get("contour_interval", 10.0)  # Default to 10m intervals (safer)
         grid_size_km = request.get("grid_size_km", 2.0)           # Default to 2km grid (safer)
-        grid_points = request.get("grid_points", 12)              # Default to 12x12 grid (safer)
+        grid_points = request.get("grid_points", 9)               # Default to 9x9 grid (81 points, under 100 limit)
         dataset = request.get("dataset", "srtm30m")
         property_boundaries = request.get("property_boundaries", [])  # Property boundaries for filtering
         
