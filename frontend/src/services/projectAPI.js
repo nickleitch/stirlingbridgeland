@@ -28,7 +28,7 @@ class ProjectAPIService {
           'Content-Type': 'application/json',
           ...options.headers
         },
-        credentials: 'include',
+        mode: 'cors',
         ...options
       });
 
