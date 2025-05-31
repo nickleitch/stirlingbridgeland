@@ -669,10 +669,26 @@ class BackendTester:
             self.log_test("Open Topo Data Rate Limiting", False, f"Error: {str(e)}")
             return False
     
-    async def test_enhanced_land_identification(self, latitude: float, longitude: float, project_name: str):
-        """Test the enhanced land identification with elevation data"""
+    async def test_create_project_with_contours(self, latitude: float, longitude: float, project_name: str):
+        """Test creating a project with contours and verify contours are stored in project data"""
         start_time = time.time()
         try:
+            print(f"Creating project with contours at coordinates: {latitude}, {longitude}")
+            
+            # First, generate contours for the location
+            contour_data = await self.test_contour_generation(
+                latitude, longitude, 
+                contour_interval=2.0, 
+                grid_size_km=3.0, 
+                grid_points=15
+            )
+            
+            if not contour_data or not contour_data.get("success", False):
+                self.log_test("Create Project with Contours", False, 
+                             "Failed to generate contours for the location", time.time() - start_time)
+                return None
+                
+            # Now create a project at the same location
             payload = {
                 "latitude": latitude,
                 "longitude": longitude,
@@ -684,35 +700,31 @@ class BackendTester:
             
             if response.status_code == 200:
                 data = response.json()
-                self.created_project_id = data.get("project_id")
+                project_id = data.get("project_id")
                 boundaries = data.get("boundaries", [])
                 
-                # Check for elevation data in the response
-                elevation_boundaries = [b for b in boundaries if b.get("layer_type") == "Elevation Data"]
-                elevation_stats = data.get("elevation_stats")
+                # Check if contours are included in the project data
+                contour_boundaries = [b for b in boundaries if b.get("layer_type") == "Generated Contours"]
                 
-                details = f"Project ID: {self.created_project_id}, Found {len(boundaries)} boundaries"
-                if elevation_boundaries:
-                    details += f", Including {len(elevation_boundaries)} elevation data points"
-                if elevation_stats:
-                    details += f", Elevation range: {elevation_stats.get('min_elevation')}m - {elevation_stats.get('max_elevation')}m"
+                details = f"Project ID: {project_id}, Total boundaries: {len(boundaries)}"
+                details += f", Contour boundaries: {len(contour_boundaries)}"
                 
-                has_elevation_data = len(elevation_boundaries) > 0 or elevation_stats is not None
-                
-                if has_elevation_data:
-                    self.log_test("Enhanced Land Identification with Elevation Data", True, details, response_time)
-                    return True
+                if len(contour_boundaries) > 0:
+                    self.log_test("Create Project with Contours", True, details, response_time)
+                    self.created_project_id = project_id
+                    return project_id
                 else:
-                    self.log_test("Enhanced Land Identification with Elevation Data", False, 
-                                 "No elevation data found in response", response_time)
-                    return False
+                    self.log_test("Create Project with Contours", False, 
+                                 "No contour boundaries found in project data", response_time)
+                    self.created_project_id = project_id  # Still save the ID for further testing
+                    return project_id
             else:
-                self.log_test("Enhanced Land Identification with Elevation Data", False, 
+                self.log_test("Create Project with Contours", False, 
                              f"Unexpected status code: {response.status_code}, Response: {response.text}", response_time)
-                return False
+                return None
         except Exception as e:
-            self.log_test("Enhanced Land Identification with Elevation Data", False, f"Error: {str(e)}")
-            return False
+            self.log_test("Create Project with Contours", False, f"Error: {str(e)}")
+            return None
     
     async def test_invalid_dataset(self):
         """Test error handling with invalid elevation dataset"""
