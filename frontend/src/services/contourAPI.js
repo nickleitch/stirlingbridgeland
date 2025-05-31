@@ -86,7 +86,13 @@ export const contourAPI = {
       const apiUrl = constructApiUrl('/contours/styles');
       console.log('Getting contour styles from:', apiUrl);
       
-      const response = await fetch(apiUrl);
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        mode: 'cors'
+      });
       const data = await response.json();
 
       if (!response.ok) {
