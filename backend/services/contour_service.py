@@ -279,7 +279,8 @@ class ContourGenerationService:
     def _generate_contour_lines(self, 
                               elevation_grid: np.ndarray,
                               grid_metadata: Dict,
-                              contour_interval: float) -> List[Dict]:
+                              contour_interval: float,
+                              property_boundaries: Optional[List[Dict]] = None) -> List[Dict]:
         """Generate contour lines using marching squares algorithm"""
         try:
             # Calculate contour levels
@@ -307,6 +308,15 @@ class ContourGenerationService:
                         "contour_type": contour_type,
                         "style": self.contour_styles[contour_type]
                     })
+            
+            logger.info(f"Generated {len(contour_lines)} total contour lines")
+            
+            # Filter contours by property boundaries (Farm Portions/Erven only)
+            if property_boundaries:
+                contour_lines = self._filter_contours_by_property_boundaries(contour_lines, property_boundaries)
+                logger.info(f"After boundary filtering: {len(contour_lines)} contour lines")
+            else:
+                logger.warning("No property boundaries provided - contours not filtered to property boundaries")
             
             return contour_lines
             
