@@ -4,6 +4,15 @@
  */
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+console.log('ContourAPI initialized with BACKEND_URL:', BACKEND_URL);
+
+// Helper function to construct API URL
+const constructApiUrl = (endpoint) => {
+  // Don't add /api prefix if the baseURL already includes it
+  return BACKEND_URL.endsWith('/api') 
+    ? `${BACKEND_URL}${endpoint}`
+    : `${BACKEND_URL}/api${endpoint}`;
+};
 
 export const contourAPI = {
   /**
