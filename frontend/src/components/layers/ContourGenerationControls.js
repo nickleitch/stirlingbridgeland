@@ -119,13 +119,13 @@ const ContourGenerationControls = memo(({ layerId, layerName, onContourGenerated
   return (
     <div className="relative">
       <div className="flex items-center space-x-1">
-        {/* Generate Button */}
+        {/* Generate Button - Simplified (no settings) */}
         <button
-          onClick={() => setShowSettings(true)}
+          onClick={handleGenerateContours}
           disabled={isGenerating || !currentProject}
           className="p-1 rounded hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          title="Generate Contours"
-          aria-label="Generate elevation contours"
+          title="Generate 10m Contours (within property boundaries)"
+          aria-label="Generate elevation contours filtered to property boundaries"
         >
           {isGenerating ? (
             <svg className="w-4 h-4 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
@@ -150,110 +150,11 @@ const ContourGenerationControls = memo(({ layerId, layerName, onContourGenerated
           )}
         </button>
 
-        {/* Settings Button */}
-        <button
-          onClick={() => setShowSettings(!showSettings)}
-          className="p-1 rounded hover:bg-gray-200 transition-colors"
-          title="Contour Settings"
-          aria-label="Configure contour generation settings"
-        >
-          <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-        </button>
+        {/* Info text */}
+        <span className="text-xs text-gray-500">
+          10m intervals
+        </span>
       </div>
-
-      {/* Settings Panel */}
-      {showSettings && (
-        <div className="absolute top-8 right-0 z-10 bg-white border border-gray-200 rounded-lg shadow-lg p-4 w-80">
-          <div className="space-y-3">
-            <h4 className="font-medium text-sm text-gray-900">Contour Generation Settings</h4>
-            
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Contour Interval (meters)
-              </label>
-              <select
-                value={settings.contour_interval}
-                onChange={(e) => setSettings(prev => ({ ...prev, contour_interval: parseFloat(e.target.value) }))}
-                className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value={0.5}>0.5m (Very Detailed)</option>
-                <option value={1.0}>1.0m (Detailed)</option>
-                <option value={2.0}>2.0m (Standard)</option>
-                <option value={5.0}>5.0m (Overview)</option>
-                <option value={10.0}>10.0m (General)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Analysis Area (km)
-              </label>
-              <select
-                value={settings.grid_size_km}
-                onChange={(e) => setSettings(prev => ({ ...prev, grid_size_km: parseFloat(e.target.value) }))}
-                className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value={1.0}>1km x 1km</option>
-                <option value={2.0}>2km x 2km</option>
-                <option value={3.0}>3km x 3km (Standard)</option>
-                <option value={5.0}>5km x 5km</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Resolution
-              </label>
-              <select
-                value={settings.grid_points}
-                onChange={(e) => setSettings(prev => ({ ...prev, grid_points: parseInt(e.target.value) }))}
-                className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value={10}>10x10 (Standard)</option>
-                <option value={15}>15x15 (High Quality - May Exceed API Limits)</option>
-                <option value={20}>20x20 (Very High Quality - May Exceed API Limits)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Elevation Dataset
-              </label>
-              <select
-                value={settings.dataset}
-                onChange={(e) => setSettings(prev => ({ ...prev, dataset: e.target.value }))}
-                className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="srtm30m">SRTM 30m (Recommended)</option>
-                <option value="srtm90m">SRTM 90m</option>
-                <option value="aster30m">ASTER 30m</option>
-              </select>
-            </div>
-
-            <div className="flex justify-end space-x-2 pt-2 border-t border-gray-200">
-              <button
-                onClick={() => setShowSettings(false)}
-                className="px-3 py-1 text-xs text-gray-600 hover:text-gray-800"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  setShowSettings(false);
-                  handleGenerateContours();
-                }}
-                disabled={isGenerating || !currentProject}
-                className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-              >
-                Generate
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 });
