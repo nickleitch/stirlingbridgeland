@@ -735,6 +735,135 @@ class BackendTester:
         except Exception as e:
             self.log_test("Error Handling - Invalid Dataset", False, f"Error: {str(e)}")
             return False
+    
+    async def test_contour_generation(self, latitude: float, longitude: float, contour_interval: float = 2.0, 
+                                     grid_size_km: float = 2.0, grid_points: int = 10):
+        """Test contour generation for the specified coordinates"""
+        start_time = time.time()
+        try:
+            print(f"Generating contours for coordinates: {latitude}, {longitude}")
+            
+            payload = {
+                "latitude": latitude,
+                "longitude": longitude,
+                "contour_interval": contour_interval,
+                "grid_size_km": grid_size_km,
+                "grid_points": grid_points
+            }
+            
+            response = await self.client.post(f"{self.base_url}/contours/generate", json=payload)
+            response_time = time.time() - start_time
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                contour_lines = data.get("contour_data", {}).get("contour_lines", [])
+                contour_count = len(contour_lines)
+                
+                # Check if contour lines are in GeoJSON LineString format
+                valid_linestrings = [c for c in contour_lines if c.get("geometry", {}).get("type") == "LineString"]
+                
+                # Log some statistics about the contours
+                stats = data.get("contour_data", {}).get("statistics", {})
+                elevation_range = stats.get("elevation_range", {})
+                contour_levels = stats.get("contour_levels", [])
+                
+                details = f"Generated {contour_count} contour lines, {len(valid_linestrings)} valid LineStrings"
+                details += f", Elevation range: {elevation_range}"
+                details += f", Unique contour levels: {len(contour_levels)}"
+                
+                if contour_count > 0 and len(valid_linestrings) == contour_count:
+                    self.log_test("Contour Generation", True, details, response_time)
+                    return data
+                else:
+                    self.log_test("Contour Generation", False, 
+                                 f"Generated contours but not all are valid LineStrings: {len(valid_linestrings)}/{contour_count}", 
+                                 response_time)
+                    return data
+            else:
+                self.log_test("Contour Generation", False, 
+                             f"Unexpected status code: {response.status_code}, Response: {response.text}", response_time)
+                return None
+        except Exception as e:
+            self.log_test("Contour Generation", False, f"Error: {str(e)}")
+            return None
+    
+    async def test_cad_download_with_contours(self, project_id: str):
+        """Test CAD download with contour data for a project"""
+        start_time = time.time()
+        try:
+            print(f"Testing CAD download with contours for project: {project_id}")
+            
+            response = await self.client.get(f"{self.base_url}/download-files/{project_id}")
+            response_time = time.time() - start_time
+            
+            if response.status_code == 200:
+                # Check if we got a ZIP file
+                if response.headers.get('content-type') != 'application/zip':
+                    self.log_test("CAD Download with Contours", False, 
+                                 f"Expected ZIP file, got {response.headers.get('content-type')}", response_time)
+                    return False
+                
+                # Save the ZIP file for inspection
+                zip_path = f"project_{project_id}_cad_package.zip"
+                with open(zip_path, "wb") as f:
+                    f.write(response.content)
+                
+                print(f"Saved CAD package to {zip_path}")
+                
+                # Analyze the ZIP file contents
+                zip_file = zipfile.ZipFile(io.BytesIO(response.content))
+                file_list = zip_file.namelist()
+                
+                print(f"ZIP file contains {len(file_list)} files:")
+                for filename in file_list:
+                    print(f"  - {filename}")
+                
+                # Check if we have a contour layer file
+                contour_files = [f for f in file_list if "CONT" in f]
+                if contour_files:
+                    print(f"Found contour files: {contour_files}")
+                    
+                    # Extract and analyze the first contour file
+                    contour_file = contour_files[0]
+                    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                        zip_ref.extract(contour_file)
+                    
+                    # Check file size
+                    file_size = os.path.getsize(contour_file)
+                    
+                    # Basic file content check
+                    with open(contour_file, 'r') as f:
+                        content = f.read()
+                        
+                        # Check for key DXF sections
+                        has_sections = "SECTION" in content and "ENTITIES" in content
+                        # Check for polylines (contour lines)
+                        has_polylines = "LWPOLYLINE" in content
+                        # Check for metadata
+                        has_metadata = "STIRLING_BRIDGE_METADATA" in content
+                        
+                        details = f"Found {len(contour_files)} contour files, Size: {file_size} bytes"
+                        details += f", Has sections: {has_sections}, Has polylines: {has_polylines}, Has metadata: {has_metadata}"
+                        
+                        if has_sections and has_polylines:
+                            self.log_test("CAD Download with Contours", True, details, response_time)
+                            return True
+                        else:
+                            self.log_test("CAD Download with Contours", False, 
+                                         f"DXF file structure issues: {details}", response_time)
+                            return False
+                else:
+                    self.log_test("CAD Download with Contours", False, 
+                                 "No contour files found in the CAD package", response_time)
+                    return False
+            else:
+                self.log_test("CAD Download with Contours", False, 
+                             f"Unexpected status code: {response.status_code}, Response: {response.text}", response_time)
+                return False
+        except Exception as e:
+            self.log_test("CAD Download with Contours", False, f"Error: {str(e)}")
+            return False
             
     def print_summary(self):
         """Print a summary of all test results"""
