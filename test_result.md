@@ -412,6 +412,18 @@ Stirling Bridge LandDev App - Complete Development Summary: Professional-grade l
           comment: "Successfully tested error handling for the contour generation endpoint. The endpoint properly validates input parameters and returns appropriate error messages for invalid coordinates (outside -90 to 90 range) and negative contour intervals. All error responses include detailed error messages and 400 status codes."
 
 ## frontend:
+  - task: "Contour Generation Feature"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/components/layers/ContourGenerationControls.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "Testing the contour generation functionality revealed several issues. The 'Generated Contours' layer is visible in the Base Data section of the layer sidebar with a + button and 'Click + to generate' text as required. However, when attempting to test the contour generation process, the layer sidebar was not properly loading after project creation. The project was successfully created with South African coordinates (-29.4828, 31.205), but the layer sidebar component was not visible or accessible, preventing further testing of the contour generation workflow. The backend API for contour generation appears to be implemented correctly based on previous testing, but the frontend integration needs to be fixed to allow users to access and use the contour generation feature."
+
   - task: "Project Progress Summary"
     implemented: true
     working: true
