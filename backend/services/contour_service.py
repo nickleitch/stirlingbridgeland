@@ -24,7 +24,7 @@ class ContourGenerationService:
         # Default contour generation parameters (simplified for reliability)
         self.default_contour_interval = 10.0  # 10 meter intervals (safer default)
         self.default_grid_size_km = 2.0       # 2km grid for focused coverage  
-        self.default_grid_points = 12         # 12x12 grid (144 points, within limits)
+        self.default_grid_points = 9          # 9x9 grid (81 points, under 100 limit)
         
         # Contour line styling options
         self.contour_styles = {
@@ -232,7 +232,7 @@ class ContourGenerationService:
                 ind = distance_transform_edt(~mask, return_distances=False, return_indices=True)
                 
                 # Interpolate using nearest valid values
-                interpolated_grid = grid[tuple(ind)]
+                interpolated_grid = grid[tuple(ind)] if ind is not None else grid
                 return interpolated_grid
                 
             except ImportError:
@@ -297,10 +297,10 @@ class ContourGenerationService:
             
             # Generate contours for each level
             for level in levels:
-                lines = self._marching_squares(elevation_grid, level, grid_metadata)
+                lines = self._marching_squares(elevation_grid, float(level), grid_metadata)
                 
                 for line in lines:
-                    contour_type = self._determine_contour_type(level, contour_interval)
+                    contour_type = self._determine_contour_type(float(level), contour_interval)
                     
                     contour_lines.append({
                         "elevation": float(level),

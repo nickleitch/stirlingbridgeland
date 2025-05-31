@@ -107,9 +107,8 @@ export const useBoundaryData = () => {
     // For Base Data layers, show all available boundaries (less restrictive filtering)
     const isBaseDataLayer = [
       'property_boundaries', 'zoning_designations', 'roads_existing', 
-      'topography_basic', 'water_bodies', 'labels_primary', 'survey_control',
-      'coordinate_grid', 'contours_major', 'spot_levels', 'elevation_data',
-      'generated_contours'
+      'water_bodies', 'labels_primary', 'survey_control',
+      'coordinate_grid', 'spot_levels', 'generated_contours'
     ].includes(layerId);
     
     let boundariesToFilter = projectBoundaries;
@@ -133,13 +132,8 @@ export const useBoundaryData = () => {
         );
       case 'roads_existing':
         return boundariesToFilter.filter(boundary => boundary.layer_type === 'Roads');
-      case 'topography_basic':
-      case 'contours_major':
-        return boundariesToFilter.filter(boundary => boundary.layer_type === 'Contours');
       case 'generated_contours':
         return boundariesToFilter.filter(boundary => boundary.layer_type === 'Generated Contours');
-      case 'elevation_data':
-        return boundariesToFilter.filter(boundary => boundary.layer_type === 'Elevation Data');
       case 'water_bodies':
         return boundariesToFilter.filter(boundary => boundary.layer_type === 'Water Bodies');
       case 'environmental_constraints':

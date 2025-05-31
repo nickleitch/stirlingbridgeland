@@ -26,7 +26,7 @@ export const contourAPI = {
         longitude, 
         contour_interval = 10.0,  // 10m intervals (safer default)
         grid_size_km = 2.0,    // 2km grid (more focused)
-        grid_points = 12,      // 12x12 grid (safer)
+        grid_points = 9,      // 9x9 grid (81 points, under 100 limit)
         dataset = "srtm30m",
         property_boundaries = []  // Property boundaries for filtering
       } = params;

@@ -10,14 +10,11 @@ export const LAYER_SECTIONS = {
       { id: "property_boundaries", name: "Property Boundaries", type: "Farm Portions", color: "#FF4500" },
       { id: "zoning_designations", name: "Zoning Designations", type: "Zoning", color: "#9932CC" },
       { id: "roads_existing", name: "Roads Existing", type: "Roads", color: "#FF6347" },
-      { id: "topography_basic", name: "Topography Basic", type: "Contours", color: "#8B4513" },
-      { id: "elevation_data", name: "Elevation Data", type: "Elevation Data", color: "#CD853F" },
       { id: "generated_contours", name: "Generated Contours", type: "Generated Contours", color: "#A0522D", generateable: true },
       { id: "water_bodies", name: "Water Bodies", type: "Water Bodies", color: "#00BFFF" },
       { id: "labels_primary", name: "Labels Primary", type: "Labels", color: "#2F4F4F" },
       { id: "survey_control", name: "Survey Control", type: "Survey", color: "#DC143C" },
       { id: "coordinate_grid", name: "Coordinate Grid", type: "Grid", color: "#808080" },
-      { id: "contours_major", name: "Contours Major", type: "Contours", color: "#A0522D" },
       { id: "spot_levels", name: "Spot Levels", type: "Levels", color: "#4682B4" }
     ]
   },
@@ -78,9 +75,7 @@ export const LAYER_TYPE_MAPPING = {
   'Holdings': 'property_boundaries',
   'Public Places': 'property_boundaries',
   'Roads': 'roads_existing',
-  'Contours': ['topography_basic', 'contours_major'],
   'Generated Contours': 'generated_contours',
-  'Elevation Data': 'elevation_data',
   'Water Bodies': 'water_bodies',
   'Environmental Constraints': 'environmental_constraints'
 };
