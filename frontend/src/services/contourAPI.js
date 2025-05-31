@@ -82,7 +82,10 @@ export const contourAPI = {
    */
   getContourStyles: async () => {
     try {
-      const response = await fetch(`${BACKEND_URL}/api/contours/styles`);
+      const apiUrl = constructApiUrl('/contours/styles');
+      console.log('Getting contour styles from:', apiUrl);
+      
+      const response = await fetch(apiUrl);
       const data = await response.json();
 
       if (!response.ok) {
