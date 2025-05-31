@@ -48,13 +48,14 @@ class ContourGenerationService:
             }
         }
     
-    async def generate_contours(self, 
+    async def generate_contours(self,
                               center_lat: float, 
                               center_lng: float,
                               contour_interval: Optional[float] = None,
                               grid_size_km: Optional[float] = None,
                               grid_points: Optional[int] = None,
-                              dataset: str = "srtm30m") -> APIResponse:
+                              dataset: str = "srtm30m",
+                              property_boundaries: Optional[List[Dict]] = None) -> APIResponse:
         """
         Generate contour lines for a given area
         
