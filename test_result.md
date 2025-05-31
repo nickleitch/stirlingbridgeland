@@ -31,6 +31,18 @@ frontend:
         - working: true
           agent: "testing"
           comment: "The fix to the convertGeometryToLeaflet function in useBoundaryData.js has successfully resolved the contour display issue. The function now properly handles GeoJSON LineString format used by generated contours. Testing confirms that the map loads correctly and displays property boundaries and water bodies. While I was unable to generate new contours due to UI interaction challenges, the existing polyline elements in the map's overlay pane were visible. The Leaflet polyline elements count was 2, with a sample element showing proper styling with stroke color and opacity. The fix correctly converts GeoJSON LineString coordinates from [lng, lat] to Leaflet's [lat, lng] format, enabling proper rendering of contour lines on the map."
+  
+  - task: "Contour Persistence and CAD Export"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "testing"
+          comment: "Attempted to test the complete contour generation and persistence workflow, but encountered UI interaction challenges. Successfully navigated to the 'South Africa Contour Test Project' and accessed the Base Data tab. The 'Generated Contours' layer was visible in the layer panel with the 'Click + to generate' text and a + button. Attempted to click the + button to open the contour generation dialog, but the dialog did not appear. The console logs showed that the layer was being correctly filtered with 'Layer generated_contours (Base Data: true): Filtering 7 total boundaries to 7 boundaries', but could not proceed with generating new contours. Unable to verify the backend persistence functionality or CAD export with contours due to these UI interaction limitations."
 
 metadata:
   created_by: "main_agent"
