@@ -648,7 +648,7 @@ Stirling Bridge LandDev App - Complete Development Summary: Professional-grade l
 
 ## test_plan:
   current_focus: 
-    - "CAD Generation with Contour Data"
+    - "Project Deletion UI"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
