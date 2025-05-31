@@ -608,7 +608,8 @@ Stirling Bridge LandDev App - Complete Development Summary: Professional-grade l
   run_ui: false
 
 ## test_plan:
-  current_focus: []
+  current_focus: 
+    - "Contour Generation Feature"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
