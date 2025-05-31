@@ -162,14 +162,26 @@ export const useBoundaryData = () => {
   const convertGeometryToLeaflet = useCallback((geometry) => {
     if (!geometry) return [];
     
-    // Handle polygons (rings)
+    // Handle GeoJSON LineString (for generated contours)
+    if (geometry.type === 'LineString' && geometry.coordinates) {
+      return [geometry.coordinates.map(coord => [coord[1], coord[0]])]; // Convert [lng, lat] to [lat, lng]
+    }
+    
+    // Handle GeoJSON Polygon
+    if (geometry.type === 'Polygon' && geometry.coordinates) {
+      return geometry.coordinates.map(ring => 
+        ring.map(coord => [coord[1], coord[0]])
+      );
+    }
+    
+    // Handle polygons (rings) - legacy ESRI format
     if (geometry.rings) {
       return geometry.rings.map(ring => 
         ring.map(coord => [coord[1], coord[0]])
       );
     }
     
-    // Handle polylines (paths) - for contours, roads, etc.
+    // Handle polylines (paths) - legacy ESRI format for contours, roads, etc.
     if (geometry.paths) {
       return geometry.paths.map(path => 
         path.map(coord => [coord[1], coord[0]])
