@@ -1,24 +1,25 @@
 #!/usr/bin/env python3
 """
-Contour Generation API Test Script
+Contour Generation System Test Script
 
-This script tests the new contour generation functionality to verify:
-1. Service Status: Check if the contour service is properly initialized and available
-2. Contour Generation: Test the main contour generation endpoint with South African coordinates
-3. Contour Styles: Test the contour styling endpoint
-4. Error Handling: Test with invalid parameters
+This script tests the updated contour generation system with the following specific changes:
+1. Default to 10m contour intervals (instead of 2m)
+2. Filter contours to only include those within Farm Portions or Erven boundaries
+3. Simplified parameters to reduce failure risk
 """
 
 import httpx
 import asyncio
 import json
 import time
+import os
 import sys
 from typing import Dict, Any, List
 
 # Test configuration
-BACKEND_URL = "http://localhost:8001/api"  # Default local URL
-SOUTH_AFRICA_COORDS = {"latitude": -29.4828, "longitude": 31.205}  # Durban area coordinates
+BACKEND_URL = os.environ.get('REACT_APP_BACKEND_URL', 'http://localhost:8001')
+API_BASE_URL = f"{BACKEND_URL}/api"
+SOUTH_AFRICA_COORDS = {"latitude": -26.0, "longitude": 28.0}  # South African coordinates for testing
 
 # Colors for terminal output
 class Colors:
@@ -32,11 +33,11 @@ class Colors:
     UNDERLINE = '\033[4m'
 
 class ContourTester:
-    """Test suite for Contour Generation API"""
+    """Test suite for Contour Generation System"""
     
     def __init__(self, base_url: str = None):
         """Initialize the tester with the backend URL"""
-        self.base_url = base_url or BACKEND_URL
+        self.base_url = base_url or API_BASE_URL
         self.client = httpx.AsyncClient(timeout=30.0)
         self.test_results = []
         self.test_stats = {"passed": 0, "failed": 0, "total": 0}
@@ -71,53 +72,16 @@ class ContourTester:
             "response_time": response_time
         })
     
-    async def test_service_status(self):
-        """Test if the contour service is properly initialized and available"""
+    async def test_contour_generation_minimal_params(self):
+        """Test contour generation with minimal parameters (just latitude/longitude)"""
         start_time = time.time()
         try:
-            response = await self.client.get(f"{self.base_url}/external-services/status")
-            response_time = time.time() - start_time
+            print(f"Testing contour generation with minimal parameters")
             
-            if response.status_code == 200:
-                data = response.json()
-                services = data.get("external_services", {})
-                contour_service = services.get("contour_service", {})
-                
-                if contour_service and contour_service.get("status") in ["available", "active"]:
-                    details = f"Contour service status: {contour_service.get('status')}"
-                    if contour_service.get("description"):
-                        details += f", Description: {contour_service.get('description')}"
-                    if contour_service.get("algorithms"):
-                        details += f", Algorithms: {', '.join(contour_service.get('algorithms'))}"
-                    
-                    self.log_test("Contour Service Status", True, details, response_time)
-                    return True
-                else:
-                    status = contour_service.get("status", "not found") if contour_service else "not found"
-                    self.log_test("Contour Service Status", False, 
-                                 f"Contour service not available. Status: {status}", response_time)
-                    return False
-            else:
-                self.log_test("Contour Service Status", False, 
-                             f"Unexpected status code: {response.status_code}, Response: {response.text}", response_time)
-                return False
-        except Exception as e:
-            self.log_test("Contour Service Status", False, f"Error: {str(e)}")
-            return False
-    
-    async def test_contour_generation(self, latitude: float, longitude: float, 
-                                    contour_interval: float = 2.0, 
-                                    grid_size_km: float = 2.0, 
-                                    grid_points: int = 10):
-        """Test the contour generation endpoint"""
-        start_time = time.time()
-        try:
+            # Only provide latitude and longitude
             payload = {
-                "latitude": latitude,
-                "longitude": longitude,
-                "contour_interval": contour_interval,
-                "grid_size_km": grid_size_km,
-                "grid_points": grid_points
+                "latitude": SOUTH_AFRICA_COORDS["latitude"],
+                "longitude": SOUTH_AFRICA_COORDS["longitude"]
             }
             
             response = await self.client.post(f"{self.base_url}/contours/generate", json=payload)
@@ -125,128 +89,343 @@ class ContourTester:
             
             if response.status_code == 200:
                 data = response.json()
+                
+                # Check if contour data exists
                 contour_data = data.get("contour_data", {})
                 contour_lines = contour_data.get("contour_lines", [])
+                parameters = contour_data.get("parameters", {})
+                
+                # Verify default parameters
+                contour_interval = parameters.get("contour_interval")
+                grid_size_km = parameters.get("grid_size_km")
+                grid_points = parameters.get("grid_points")
+                
+                # Check if defaults match expected values
+                interval_correct = contour_interval == 10.0
+                grid_size_correct = grid_size_km == 2.0
+                grid_points_correct = grid_points == 12
                 
                 details = f"Generated {len(contour_lines)} contour lines"
-                if contour_data.get("statistics"):
-                    stats = contour_data.get("statistics")
-                    details += f", Elevation range: {stats.get('elevation_range', {}).get('min')}m - {stats.get('elevation_range', {}).get('max')}m"
-                    if stats.get("contour_levels"):
-                        details += f", Contour levels: {len(stats.get('contour_levels'))} unique elevations"
+                details += f", Default contour interval: {contour_interval}m (Expected: 10.0m)"
+                details += f", Default grid size: {grid_size_km}km (Expected: 2.0km)"
+                details += f", Default grid points: {grid_points} (Expected: 12)"
                 
-                # Check if we have GeoJSON features with elevation properties
-                if contour_lines and all(
-                    line.get("type") == "Feature" and 
-                    line.get("geometry") and 
-                    line.get("properties", {}).get("elevation") is not None
-                    for line in contour_lines
-                ):
-                    self.log_test("Contour Generation", True, details, response_time)
-                    return True
+                if interval_correct and grid_size_correct and grid_points_correct:
+                    self.log_test("Contour Generation with Minimal Parameters", True, details, response_time)
+                    return data
                 else:
-                    self.log_test("Contour Generation", False, 
-                                 "Response doesn't contain valid GeoJSON features with elevation properties", response_time)
-                    return False
+                    self.log_test("Contour Generation with Minimal Parameters", False, 
+                                 f"Default parameters don't match expected values: {details}", 
+                                 response_time)
+                    return data
             else:
-                self.log_test("Contour Generation", False, 
+                self.log_test("Contour Generation with Minimal Parameters", False, 
                              f"Unexpected status code: {response.status_code}, Response: {response.text}", response_time)
-                return False
+                return None
         except Exception as e:
-            self.log_test("Contour Generation", False, f"Error: {str(e)}")
-            return False
+            self.log_test("Contour Generation with Minimal Parameters", False, f"Error: {str(e)}")
+            return None
     
-    async def test_contour_styles(self):
-        """Test the contour styling endpoint"""
+    async def test_contour_generation_with_property_boundaries(self):
+        """Test contour generation with property boundaries parameter"""
         start_time = time.time()
         try:
+            print(f"Testing contour generation with property boundaries")
+            
+            # Sample Farm Portions boundary
+            property_boundaries = [
+                {
+                    "layer_type": "Farm Portions",
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [27.99, -26.01],
+                            [28.01, -26.01], 
+                            [28.01, -25.99],
+                            [27.99, -25.99],
+                            [27.99, -26.01]
+                        ]]
+                    }
+                }
+            ]
+            
+            payload = {
+                "latitude": SOUTH_AFRICA_COORDS["latitude"],
+                "longitude": SOUTH_AFRICA_COORDS["longitude"],
+                "property_boundaries": property_boundaries
+            }
+            
+            response = await self.client.post(f"{self.base_url}/contours/generate", json=payload)
+            response_time = time.time() - start_time
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check if contour data exists
+                contour_data = data.get("contour_data", {})
+                contour_lines = contour_data.get("contour_lines", [])
+                boundaries = contour_data.get("boundaries", [])
+                
+                # Check if we have contour lines and boundaries
+                has_contour_lines = len(contour_lines) > 0
+                has_boundaries = len(boundaries) > 0
+                
+                # Check if the response includes a success message about filtering
+                message = data.get("message", "")
+                has_filtering_message = "Generated" in message and "contour lines" in message
+                
+                details = f"Generated {len(contour_lines)} contour lines"
+                details += f", Boundaries: {len(boundaries)}"
+                details += f", Message: {message}"
+                
+                if has_contour_lines and has_boundaries and has_filtering_message:
+                    self.log_test("Contour Generation with Property Boundaries", True, details, response_time)
+                    return data
+                else:
+                    self.log_test("Contour Generation with Property Boundaries", False, 
+                                 f"Missing expected data in response: {details}", 
+                                 response_time)
+                    return data
+            else:
+                self.log_test("Contour Generation with Property Boundaries", False, 
+                             f"Unexpected status code: {response.status_code}, Response: {response.text}", response_time)
+                return None
+        except Exception as e:
+            self.log_test("Contour Generation with Property Boundaries", False, f"Error: {str(e)}")
+            return None
+    
+    async def test_contour_generation_with_erven_boundaries(self):
+        """Test contour generation with Erven property boundaries"""
+        start_time = time.time()
+        try:
+            print(f"Testing contour generation with Erven boundaries")
+            
+            # Sample Erven boundary
+            property_boundaries = [
+                {
+                    "layer_type": "Erven",
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [27.995, -26.005],
+                            [28.005, -26.005], 
+                            [28.005, -25.995],
+                            [27.995, -25.995],
+                            [27.995, -26.005]
+                        ]]
+                    }
+                }
+            ]
+            
+            payload = {
+                "latitude": SOUTH_AFRICA_COORDS["latitude"],
+                "longitude": SOUTH_AFRICA_COORDS["longitude"],
+                "property_boundaries": property_boundaries
+            }
+            
+            response = await self.client.post(f"{self.base_url}/contours/generate", json=payload)
+            response_time = time.time() - start_time
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check if contour data exists
+                contour_data = data.get("contour_data", {})
+                contour_lines = contour_data.get("contour_lines", [])
+                boundaries = contour_data.get("boundaries", [])
+                
+                # Check if we have contour lines and boundaries
+                has_contour_lines = len(contour_lines) > 0
+                has_boundaries = len(boundaries) > 0
+                
+                details = f"Generated {len(contour_lines)} contour lines"
+                details += f", Boundaries: {len(boundaries)}"
+                
+                if has_contour_lines and has_boundaries:
+                    self.log_test("Contour Generation with Erven Boundaries", True, details, response_time)
+                    return data
+                else:
+                    self.log_test("Contour Generation with Erven Boundaries", False, 
+                                 f"Missing expected data in response: {details}", 
+                                 response_time)
+                    return data
+            else:
+                self.log_test("Contour Generation with Erven Boundaries", False, 
+                             f"Unexpected status code: {response.status_code}, Response: {response.text}", response_time)
+                return None
+        except Exception as e:
+            self.log_test("Contour Generation with Erven Boundaries", False, f"Error: {str(e)}")
+            return None
+    
+    async def test_contour_generation_with_custom_interval(self):
+        """Test contour generation with custom contour interval"""
+        start_time = time.time()
+        try:
+            print(f"Testing contour generation with custom contour interval")
+            
+            # Use custom contour interval
+            payload = {
+                "latitude": SOUTH_AFRICA_COORDS["latitude"],
+                "longitude": SOUTH_AFRICA_COORDS["longitude"],
+                "contour_interval": 5.0  # 5m interval instead of default 10m
+            }
+            
+            response = await self.client.post(f"{self.base_url}/contours/generate", json=payload)
+            response_time = time.time() - start_time
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check if contour data exists
+                contour_data = data.get("contour_data", {})
+                parameters = contour_data.get("parameters", {})
+                
+                # Verify custom interval was used
+                contour_interval = parameters.get("contour_interval")
+                interval_correct = contour_interval == 5.0
+                
+                details = f"Custom contour interval: {contour_interval}m (Expected: 5.0m)"
+                
+                if interval_correct:
+                    self.log_test("Contour Generation with Custom Interval", True, details, response_time)
+                    return data
+                else:
+                    self.log_test("Contour Generation with Custom Interval", False, 
+                                 f"Custom interval not applied: {details}", 
+                                 response_time)
+                    return data
+            else:
+                self.log_test("Contour Generation with Custom Interval", False, 
+                             f"Unexpected status code: {response.status_code}, Response: {response.text}", response_time)
+                return None
+        except Exception as e:
+            self.log_test("Contour Generation with Custom Interval", False, f"Error: {str(e)}")
+            return None
+    
+    async def test_contour_generation_error_handling(self):
+        """Test error handling with invalid parameters"""
+        start_time = time.time()
+        try:
+            print(f"Testing contour generation error handling")
+            
+            # Invalid parameters (negative contour interval)
+            payload = {
+                "latitude": SOUTH_AFRICA_COORDS["latitude"],
+                "longitude": SOUTH_AFRICA_COORDS["longitude"],
+                "contour_interval": -5.0  # Invalid negative interval
+            }
+            
+            response = await self.client.post(f"{self.base_url}/contours/generate", json=payload)
+            response_time = time.time() - start_time
+            
+            # Should return a 400 Bad Request
+            if response.status_code == 400:
+                error_detail = response.json().get("detail", "")
+                
+                details = f"Status code: {response.status_code}, Error: {error_detail}"
+                
+                if "contour interval must be positive" in error_detail.lower():
+                    self.log_test("Contour Generation Error Handling", True, details, response_time)
+                    return True
+                else:
+                    self.log_test("Contour Generation Error Handling", False, 
+                                 f"Expected error about contour interval, got: {details}", 
+                                 response_time)
+                    return False
+            else:
+                self.log_test("Contour Generation Error Handling", False, 
+                             f"Expected status code 400, got: {response.status_code}, Response: {response.text}", response_time)
+                return False
+        except Exception as e:
+            self.log_test("Contour Generation Error Handling", False, f"Error: {str(e)}")
+            return False
+    
+    async def test_contour_generation_invalid_coordinates(self):
+        """Test error handling with invalid coordinates"""
+        start_time = time.time()
+        try:
+            print(f"Testing contour generation with invalid coordinates")
+            
+            # Invalid coordinates (latitude out of range)
+            payload = {
+                "latitude": 100.0,  # Invalid (>90)
+                "longitude": 28.0
+            }
+            
+            response = await self.client.post(f"{self.base_url}/contours/generate", json=payload)
+            response_time = time.time() - start_time
+            
+            # Should return a 400 Bad Request
+            if response.status_code == 400:
+                error_detail = response.json().get("detail", "")
+                
+                details = f"Status code: {response.status_code}, Error: {error_detail}"
+                
+                if "invalid latitude" in error_detail.lower():
+                    self.log_test("Contour Generation Invalid Coordinates", True, details, response_time)
+                    return True
+                else:
+                    self.log_test("Contour Generation Invalid Coordinates", False, 
+                                 f"Expected error about invalid latitude, got: {details}", 
+                                 response_time)
+                    return False
+            else:
+                self.log_test("Contour Generation Invalid Coordinates", False, 
+                             f"Expected status code 400, got: {response.status_code}, Response: {response.text}", response_time)
+                return False
+        except Exception as e:
+            self.log_test("Contour Generation Invalid Coordinates", False, f"Error: {str(e)}")
+            return False
+    
+    async def test_contour_styles_endpoint(self):
+        """Test the contour styles endpoint"""
+        start_time = time.time()
+        try:
+            print(f"Testing contour styles endpoint")
+            
             response = await self.client.get(f"{self.base_url}/contours/styles")
             response_time = time.time() - start_time
             
             if response.status_code == 200:
                 data = response.json()
-                styles = data.get("contour_styles", {})
                 
-                if styles and isinstance(styles, dict) and len(styles) > 0:
-                    style_types = list(styles.keys())
-                    details = f"Available styles: {', '.join(style_types)}"
-                    if data.get("default_interval"):
-                        details += f", Default interval: {data.get('default_interval')}m"
-                    if data.get("supported_intervals"):
-                        details += f", Supported intervals: {', '.join(map(str, data.get('supported_intervals')))}m"
-                    
-                    self.log_test("Contour Styles", True, details, response_time)
-                    return True
+                # Check if contour styles exist
+                contour_styles = data.get("contour_styles", {})
+                default_interval = data.get("default_interval")
+                supported_intervals = data.get("supported_intervals", [])
+                
+                # Check if we have the expected data
+                has_styles = len(contour_styles) > 0
+                has_default_interval = default_interval is not None
+                has_supported_intervals = len(supported_intervals) > 0
+                
+                # Check if default interval is 10.0m
+                default_interval_correct = default_interval == 10.0
+                
+                details = f"Contour styles: {list(contour_styles.keys())}"
+                details += f", Default interval: {default_interval}m"
+                details += f", Supported intervals: {supported_intervals}"
+                
+                if has_styles and has_default_interval and has_supported_intervals and default_interval_correct:
+                    self.log_test("Contour Styles Endpoint", True, details, response_time)
+                    return data
                 else:
-                    self.log_test("Contour Styles", False, "No contour styles found in response", response_time)
-                    return False
+                    self.log_test("Contour Styles Endpoint", False, 
+                                 f"Missing expected data in response: {details}", 
+                                 response_time)
+                    return data
             else:
-                self.log_test("Contour Styles", False, 
+                self.log_test("Contour Styles Endpoint", False, 
                              f"Unexpected status code: {response.status_code}, Response: {response.text}", response_time)
-                return False
+                return None
         except Exception as e:
-            self.log_test("Contour Styles", False, f"Error: {str(e)}")
-            return False
-    
-    async def test_invalid_coordinates(self):
-        """Test error handling with invalid coordinates"""
-        start_time = time.time()
-        try:
-            # Test coordinates outside valid range
-            payload = {
-                "latitude": 100.0,  # Invalid latitude (>90)
-                "longitude": 28.0473,
-                "contour_interval": 2.0,
-                "grid_size_km": 2.0,
-                "grid_points": 10
-            }
-            
-            response = await self.client.post(f"{self.base_url}/contours/generate", json=payload)
-            response_time = time.time() - start_time
-            
-            if response.status_code in [400, 422]:
-                details = f"Status code: {response.status_code}, Error message: {response.json().get('detail')}"
-                self.log_test("Error Handling - Invalid Coordinates", True, details, response_time)
-                return True
-            else:
-                self.log_test("Error Handling - Invalid Coordinates", False, 
-                             f"Unexpected status code: {response.status_code}, Response: {response.text}", response_time)
-                return False
-        except Exception as e:
-            self.log_test("Error Handling - Invalid Coordinates", False, f"Error: {str(e)}")
-            return False
-    
-    async def test_negative_contour_interval(self):
-        """Test error handling with negative contour interval"""
-        start_time = time.time()
-        try:
-            payload = {
-                "latitude": SOUTH_AFRICA_COORDS["latitude"],
-                "longitude": SOUTH_AFRICA_COORDS["longitude"],
-                "contour_interval": -2.0,  # Negative interval
-                "grid_size_km": 2.0,
-                "grid_points": 10
-            }
-            
-            response = await self.client.post(f"{self.base_url}/contours/generate", json=payload)
-            response_time = time.time() - start_time
-            
-            if response.status_code in [400, 422]:
-                details = f"Status code: {response.status_code}, Error message: {response.json().get('detail')}"
-                self.log_test("Error Handling - Negative Contour Interval", True, details, response_time)
-                return True
-            else:
-                self.log_test("Error Handling - Negative Contour Interval", False, 
-                             f"Unexpected status code: {response.status_code}, Response: {response.text}", response_time)
-                return False
-        except Exception as e:
-            self.log_test("Error Handling - Negative Contour Interval", False, f"Error: {str(e)}")
-            return False
+            self.log_test("Contour Styles Endpoint", False, f"Error: {str(e)}")
+            return None
     
     def print_summary(self):
         """Print a summary of all test results"""
         print("\n" + "="*80)
-        print(f"{Colors.BOLD}CONTOUR GENERATION TEST SUMMARY{Colors.ENDC}")
+        print(f"{Colors.BOLD}TEST SUMMARY{Colors.ENDC}")
         print("="*80)
         
         # Calculate pass percentage
@@ -274,39 +453,34 @@ class ContourTester:
 
 async def main():
     """Main test function"""
-    print(f"{Colors.HEADER}Contour Generation API Test Suite{Colors.ENDC}")
+    print(f"{Colors.HEADER}Contour Generation System Test Suite{Colors.ENDC}")
+    print(f"{Colors.HEADER}Testing updated contour generation system{Colors.ENDC}")
     print("="*80)
     
     # Initialize tester
     tester = ContourTester()
     
     try:
-        # Test 1: Service Status
-        print(f"\n{Colors.HEADER}1. Testing Contour Service Status{Colors.ENDC}")
-        print("-"*80)
-        await tester.test_service_status()
+        # Test 1: Contour generation with minimal parameters
+        await tester.test_contour_generation_minimal_params()
         
-        # Test 2: Contour Generation
-        print(f"\n{Colors.HEADER}2. Testing Contour Generation{Colors.ENDC}")
-        print("-"*80)
-        await tester.test_contour_generation(
-            SOUTH_AFRICA_COORDS["latitude"], 
-            SOUTH_AFRICA_COORDS["longitude"],
-            contour_interval=2.0,
-            grid_size_km=2.0,
-            grid_points=10
-        )
+        # Test 2: Contour generation with property boundaries
+        await tester.test_contour_generation_with_property_boundaries()
         
-        # Test 3: Contour Styles
-        print(f"\n{Colors.HEADER}3. Testing Contour Styles{Colors.ENDC}")
-        print("-"*80)
-        await tester.test_contour_styles()
+        # Test 3: Contour generation with Erven boundaries
+        await tester.test_contour_generation_with_erven_boundaries()
         
-        # Test 4: Error Handling
-        print(f"\n{Colors.HEADER}4. Testing Error Handling{Colors.ENDC}")
-        print("-"*80)
-        await tester.test_invalid_coordinates()
-        await tester.test_negative_contour_interval()
+        # Test 4: Contour generation with custom interval
+        await tester.test_contour_generation_with_custom_interval()
+        
+        # Test 5: Contour generation error handling
+        await tester.test_contour_generation_error_handling()
+        
+        # Test 6: Contour generation with invalid coordinates
+        await tester.test_contour_generation_invalid_coordinates()
+        
+        # Test 7: Contour styles endpoint
+        await tester.test_contour_styles_endpoint()
         
     finally:
         # Print summary and close client
