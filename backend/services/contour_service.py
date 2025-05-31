@@ -482,3 +482,138 @@ class ContourGenerationService:
             "supported_datasets": list(self.open_topo_service.datasets.keys()) if self.open_topo_service else [],
             "contour_types": list(self.contour_styles.keys())
         }
+        
+    def _filter_contours_by_property_boundaries(self, contour_lines: List[Dict], property_boundaries: List[Dict]) -> List[Dict]:
+        """
+        Filter contour lines to only include those within Farm Portions or Erven boundaries
+        
+        Args:
+            contour_lines: Generated contour line features
+            property_boundaries: Property boundary data from project
+            
+        Returns:
+            Filtered contour lines that intersect with property boundaries
+        """
+        if not property_boundaries:
+            return contour_lines
+            
+        # Filter boundaries to only Farm Portions and Erven
+        relevant_boundaries = [
+            boundary for boundary in property_boundaries 
+            if boundary.get('layer_type') in ['Farm Portions', 'Erven']
+        ]
+        
+        if not relevant_boundaries:
+            logger.warning("No Farm Portions or Erven boundaries found for filtering contours")
+            return contour_lines
+            
+        filtered_contours = []
+        
+        for contour in contour_lines:
+            # Check if contour intersects with any relevant property boundary
+            contour_intersects = False
+            
+            try:
+                # Get contour geometry coordinates
+                if contour.get('geometry', {}).get('type') == 'LineString':
+                    contour_coords = contour['geometry']['coordinates']
+                    
+                    # Check intersection with each relevant boundary
+                    for boundary in relevant_boundaries:
+                        if self._contour_intersects_boundary(contour_coords, boundary):
+                            contour_intersects = True
+                            break
+                            
+                if contour_intersects:
+                    filtered_contours.append(contour)
+                    
+            except Exception as e:
+                logger.warning(f"Error checking contour intersection: {e}")
+                # Include contour if we can't determine intersection (safer approach)
+                filtered_contours.append(contour)
+                
+        logger.info(f"Filtered contours: {len(filtered_contours)} out of {len(contour_lines)} contours within property boundaries")
+        return filtered_contours
+    
+    def _contour_intersects_boundary(self, contour_coords: List[List[float]], boundary: Dict) -> bool:
+        """
+        Check if a contour line intersects with a property boundary
+        
+        Args:
+            contour_coords: Contour line coordinates [[lng, lat], [lng, lat], ...]
+            boundary: Property boundary data
+            
+        Returns:
+            True if contour intersects with boundary
+        """
+        try:
+            # Get boundary geometry
+            boundary_geometry = boundary.get('geometry', {})
+            
+            if not boundary_geometry:
+                return False
+            
+            # Handle different geometry formats
+            boundary_coords = None
+            
+            # Handle GeoJSON Polygon format
+            if boundary_geometry.get('type') == 'Polygon':
+                boundary_coords = boundary_geometry.get('coordinates', [])
+                if boundary_coords:
+                    boundary_coords = boundary_coords[0]  # Get exterior ring
+            
+            # Handle legacy ESRI format with rings
+            elif boundary_geometry.get('rings'):
+                rings = boundary_geometry['rings']
+                if rings:
+                    boundary_coords = rings[0]  # Get first ring
+            
+            if not boundary_coords or len(boundary_coords) < 3:
+                return False
+            
+            # Check if any contour point is inside the boundary polygon
+            for coord in contour_coords:
+                if len(coord) >= 2:
+                    lng, lat = coord[0], coord[1]
+                    if self._point_in_polygon(lat, lng, boundary_coords):
+                        return True
+            
+            return False
+            
+        except Exception as e:
+            logger.warning(f"Error checking boundary intersection: {e}")
+            return False
+    
+    def _point_in_polygon(self, lat: float, lng: float, polygon_coords: List[List[float]]) -> bool:
+        """
+        Check if a point is inside a polygon using ray casting algorithm
+        
+        Args:
+            lat: Point latitude
+            lng: Point longitude  
+            polygon_coords: Polygon coordinates [[lng, lat], [lng, lat], ...]
+            
+        Returns:
+            True if point is inside polygon
+        """
+        try:
+            x, y = lng, lat
+            n = len(polygon_coords)
+            inside = False
+            
+            p1x, p1y = polygon_coords[0][0], polygon_coords[0][1]
+            for i in range(1, n + 1):
+                p2x, p2y = polygon_coords[i % n][0], polygon_coords[i % n][1]
+                if y > min(p1y, p2y):
+                    if y <= max(p1y, p2y):
+                        if x <= max(p1x, p2x):
+                            if p1y != p2y:
+                                xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
+                            if p1x == p2x or x <= xinters:
+                                inside = not inside
+                p1x, p1y = p2x, p2y
+            
+            return inside
+            
+        except Exception:
+            return False
