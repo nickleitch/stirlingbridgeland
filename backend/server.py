@@ -190,7 +190,7 @@ async def identify_land(coordinates: CoordinateInput):
                 ]
                 
                 cad_files = await cad_manager.generate_project_cad_layers(
-                    project_id, coordinates.project_name, boundaries_for_cad
+                    project_id, coordinates.project_name or "Land Development Project", boundaries_for_cad
                 )
                 files_generated = list(cad_files.keys())
                 logger.info(f"Generated {len(files_generated)} CAD files")
@@ -316,7 +316,7 @@ async def list_projects(limit: int = 100, skip: int = 0, search: Optional[str] =
             )
         
         # Get projects from database
-        result = await db_service.list_projects(limit=limit, skip=skip, search_term=search)
+        result = await db_service.list_projects(limit=limit, skip=skip, search_term=search or "")
         
         if not result["success"]:
             raise HTTPException(
@@ -516,7 +516,7 @@ async def get_elevation_point(latitude: float, longitude: float, dataset: Option
         
         # Query elevation data
         elevation_response = await api_manager.open_topo_service.query_by_coordinates(
-            latitude, longitude, dataset=dataset
+            latitude, longitude, dataset=dataset or "srtm30m"
         )
         
         if elevation_response.success:
@@ -556,13 +556,13 @@ async def generate_elevation_grid(coordinates: CoordinateInput,
             )
         
         # Validate parameters
-        if grid_size_km <= 0 or grid_size_km > 10:
+        if grid_size_km is None or grid_size_km <= 0 or grid_size_km > 10:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Grid size must be between 0 and 10 kilometers"
             )
         
-        if grid_points < 3 or grid_points > 20:
+        if grid_points is None or grid_points < 3 or grid_points > 20:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Grid points must be between 3 and 20"
@@ -571,7 +571,7 @@ async def generate_elevation_grid(coordinates: CoordinateInput,
         # Generate elevation grid
         grid_response = await api_manager.open_topo_service.generate_elevation_grid(
             coordinates.latitude, coordinates.longitude,
-            grid_size_km=grid_size_km, grid_points=grid_points, dataset=dataset
+            grid_size_km=grid_size_km, grid_points=grid_points, dataset=dataset or "srtm30m"
         )
         
         if grid_response.success:
@@ -843,40 +843,25 @@ async def get_user_profile(user_id: Optional[str] = None):
 async def update_project(project_id: str, update_data: dict):
     """Update an existing project with new data"""
     try:
-        project_collection = db_service.db["projects"]
-        
-        # Validate that the project exists
-        existing_project = await project_collection.find_one({"id": project_id})
-        if not existing_project:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Project with ID {project_id} not found"
-            )
-        
-        # Prepare update data
+        # Prepare update data with allowed fields only
         allowed_fields = ["name", "description", "data", "coordinates", "project_type"]
         update_fields = {k: v for k, v in update_data.items() if k in allowed_fields}
         update_fields["last_updated"] = datetime.now().isoformat()
         
-        # Update the project
-        result = await project_collection.update_one(
-            {"id": project_id},
-            {"$set": update_fields}
-        )
+        result = await db_service.update_project(project_id, update_fields)
         
-        if result.modified_count == 0:
-            logger.warning(f"No changes made to project {project_id}")
-        
-        # Get the updated project
-        updated_project = await project_collection.find_one({"id": project_id})
-        if updated_project:
-            updated_project["_id"] = str(updated_project["_id"])
+        if not result or not result.get("success"):
+            if result and "not found" in result.get("error", "").lower():
+                raise HTTPException(status_code=404, detail="Project not found")
+            else:
+                error_msg = result.get("error", "Update failed") if result else "Update failed"
+                raise HTTPException(status_code=400, detail=error_msg)
         
         logger.info(f"Updated project {project_id}")
         
         return {
             "success": True,
-            "project": updated_project,
+            "project": result["data"],
             "message": f"Project {project_id} updated successfully"
         }
         
@@ -931,17 +916,16 @@ async def get_app_statistics():
         today = now.date().isoformat()
         week_ago = (now - timedelta(days=7)).isoformat()
         
-        # Get database and count projects
-        db = await db_service.get_database()
-        projects_collection = db["projects"]
+        # Get projects from database service
+        projects_result = await db_service.list_projects(limit=1000, skip=0, search_term="")
+        if not projects_result["success"]:
+            raise HTTPException(status_code=500, detail="Failed to retrieve projects")
         
-        total_projects = await projects_collection.count_documents({})
-        projects_today = await projects_collection.count_documents({
-            "created": {"$regex": f"^{today}"}
-        })
-        projects_this_week = await projects_collection.count_documents({
-            "created": {"$gte": week_ago}
-        })
+        projects = projects_result["data"]["projects"]
+        
+        total_projects = len(projects)
+        projects_today = len([p for p in projects if p.get("created", "").startswith(today)])
+        projects_this_week = len([p for p in projects if p.get("created", "") >= week_ago])
         
         # Calculate uptime (simplified - from app start)
         import time

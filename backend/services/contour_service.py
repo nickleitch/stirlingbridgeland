@@ -232,7 +232,7 @@ class ContourGenerationService:
                 ind = distance_transform_edt(~mask, return_distances=False, return_indices=True)
                 
                 # Interpolate using nearest valid values
-                interpolated_grid = grid[tuple(ind)]
+                interpolated_grid = grid[tuple(ind)] if ind is not None else grid
                 return interpolated_grid
                 
             except ImportError:
@@ -297,10 +297,10 @@ class ContourGenerationService:
             
             # Generate contours for each level
             for level in levels:
-                lines = self._marching_squares(elevation_grid, level, grid_metadata)
+                lines = self._marching_squares(elevation_grid, float(level), grid_metadata)
                 
                 for line in lines:
-                    contour_type = self._determine_contour_type(level, contour_interval)
+                    contour_type = self._determine_contour_type(float(level), contour_interval)
                     
                     contour_lines.append({
                         "elevation": float(level),
