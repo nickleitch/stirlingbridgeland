@@ -373,7 +373,7 @@ const ProjectProgressSummaryForList = memo(({ project, onSelect }) => {
           ))}
         </div>
       </div>
-    </div>
+    </>
   );
 });
 
