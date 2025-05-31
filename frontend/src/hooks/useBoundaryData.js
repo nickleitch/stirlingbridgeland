@@ -108,7 +108,8 @@ export const useBoundaryData = () => {
     const isBaseDataLayer = [
       'property_boundaries', 'zoning_designations', 'roads_existing', 
       'topography_basic', 'water_bodies', 'labels_primary', 'survey_control',
-      'coordinate_grid', 'contours_major', 'spot_levels'
+      'coordinate_grid', 'contours_major', 'spot_levels', 'elevation_data',
+      'generated_contours'
     ].includes(layerId);
     
     let boundariesToFilter = projectBoundaries;
