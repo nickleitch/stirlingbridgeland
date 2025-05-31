@@ -1,5 +1,6 @@
 import React, { memo } from 'react';
 import LayerControls from './LayerControls';
+import ContourGenerationControls from './ContourGenerationControls';
 import { useLayer } from '../../contexts/LayerContext';
 import { useBoundaryData } from '../../hooks/useBoundaryData';
 
@@ -17,6 +18,14 @@ const LayerItem = memo(({ layer }) => {
   const isEnabled = layerStates[layer.id];
   const isRefreshing = layerRefreshing[layer.id];
   const isDownloading = layerDownloading[layer.id];
+  const isGeneratable = layer.generateable;
+
+  const handleContourGenerated = (contourData) => {
+    // Auto-enable the layer when contours are generated
+    if (!isEnabled) {
+      toggleLayer(layer.id);
+    }
+  };
 
   return (
     <div 
@@ -28,10 +37,22 @@ const LayerItem = memo(({ layer }) => {
           {layer.stage && (
             <div className="text-xs text-gray-500 mt-1">{layer.stage}</div>
           )}
+          {isGeneratable && (
+            <div className="text-xs text-blue-600 mt-1">Click + to generate</div>
+          )}
         </div>
         
         <div className="flex items-center space-x-2">
-          {/* Layer Controls - Refresh and CAD Download */}
+          {/* Contour Generation Controls for generated_contours layer */}
+          {isGeneratable && layer.id === 'generated_contours' && (
+            <ContourGenerationControls
+              layerId={layer.id}
+              layerName={layer.name}
+              onContourGenerated={handleContourGenerated}
+            />
+          )}
+          
+          {/* Standard Layer Controls - Refresh and CAD Download */}
           <LayerControls
             layerId={layer.id}
             layerName={layer.name}
