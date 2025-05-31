@@ -137,7 +137,14 @@ export const useBoundaryData = () => {
       case 'contours_major':
         return boundariesToFilter.filter(boundary => boundary.layer_type === 'Contours');
       case 'generated_contours':
-        return boundariesToFilter.filter(boundary => boundary.layer_type === 'Generated Contours');
+        console.log('Filtering for generated_contours layer');
+        console.log('Total boundaries to filter:', boundariesToFilter.length);
+        const generatedContours = boundariesToFilter.filter(boundary => {
+          console.log('Boundary layer_type:', boundary.layer_type, 'Matches Generated Contours:', boundary.layer_type === 'Generated Contours');
+          return boundary.layer_type === 'Generated Contours';
+        });
+        console.log('Generated contours found:', generatedContours.length);
+        return generatedContours;
       case 'elevation_data':
         return boundariesToFilter.filter(boundary => boundary.layer_type === 'Elevation Data');
       case 'water_bodies':
