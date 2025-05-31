@@ -8,7 +8,7 @@ const ContourGenerationControls = memo(({ layerId, layerName, onContourGenerated
   const [settings, setSettings] = useState({
     contour_interval: 2.0,
     grid_size_km: 3.0,
-    grid_points: 15,
+    grid_points: 10, // Reduced from 15 to stay within API limits (10x10 = 100 points)
     dataset: 'srtm30m'
   });
 
