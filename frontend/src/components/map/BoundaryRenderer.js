@@ -98,7 +98,7 @@ const BoundaryRenderer = memo(() => {
         </Polyline>
       ));
     } else {
-      // Render as polygon (for property boundaries, etc.)
+      // Render as polygon (for property boundaries, etc.) - no fill, just outline
       return (
         <Polygon
           key={`boundary-${index}`}
@@ -107,8 +107,7 @@ const BoundaryRenderer = memo(() => {
             color: color,
             weight: 3,
             opacity: 0.9,
-            fillColor: color,
-            fillOpacity: 0.3
+            fillOpacity: 0  // No fill, just boundary lines
           }}
         >
           <Popup>{PopupContent}</Popup>
